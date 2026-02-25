@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>新加坡7天访学行程</title>
+
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://cdn.tailwindcss.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+  <!-- 引入 DOMPurify 防范 XSS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --panel: rgba(255,255,255,.95);
+      --panel-strong: rgba(255,255,255,.98);
+      --ease: cubic-bezier(.22,1,.36,1);
+      --t-fast: 160ms var(--ease);
+      --t: 320ms var(--ease);
+      --theme: #0ea5e9;
+    }
+
+    html, body { height: 100%; overscroll-behavior-y: none; }
+    body {
+      font-family: 'Outfit', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(14,165,233,.08), transparent 60%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(236,72,153,.08), transparent 55%),
+                  var(--bg);
+      overflow: hidden;
+    }
+
+    /* 侧边栏与导航 */
+    #main-nav {
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-right: 1px solid rgba(15,23,42,.06);
+      z-index: 1000;
+    }
+    .nav-item {
+      transition: all var(--t);
+      border-left: 4px solid transparent;
+    }
+    .nav-item:hover, .nav-item:focus-visible { background: rgba(14,165,233,.05); outline: none; }
+    .nav-item.active { background: rgba(14,165,233,.08); border-left-color: var(--theme); }
+    .nav-item.visited .nav-title { color: #64748b; font-weight: 500; }
+    .nav-item.visited .nav-icon-wrap { filter: grayscale(0.5) opacity(0.8); }
+    .nav-item.active .nav-icon-wrap { filter: none; }
+
+    /* 滚动条 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148,163,184,.3); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.5); }
+
+    /* 详情面板 */
+    #detail-panel {
+      background: var(--panel-strong);
+      border-left: 1px solid rgba(15,23,42,.06);
+      box-shadow: -10px 0 40px rgba(0,0,0,.05);
+      transition: transform 0.4s var(--ease);
+      will-change: transform;
+      z-index: 1100;
+    }
+    .panel-sticky {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(255,255,255,.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(15,23,42,.06);
+    }
+
+    /* 图片渐进式加载 & 骨架屏 */
+    .img-skeleton {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite linear;
+      position: relative;
+      overflow: hidden;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .lazy-img { opacity: 0; transition: opacity 0.5s ease-out; }
+    .lazy-img.loaded { opacity: 1; }
+
+    /* 媒体卡片布局 */
+    .gallery-item { cursor: pointer; break-inside: avoid; margin-bottom: 14px; position: relative; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; }
+    .gallery-item:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+    
+    .view-masonry { column-gap: 14px; columns: 1; }
+    @media (min-width: 640px) { .view-masonry { columns: 2; } }
+    .view-timeline { display: flex; flex-direction: column; gap: 1rem; }
+    .view-timeline .gallery-item { display: flex; align-items: center; gap: 1rem; margin-bottom: 0; background: #fff; padding: 0.5rem; border: 1px solid #f1f5f9; }
+    .view-timeline .gallery-item img, .view-timeline .gallery-item video { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .view-timeline .meta-info { flex: 1; display: block; font-size: 0.875rem; color: #64748b; }
+    .meta-info { display: none; }
+
+    /* 地图组件 */
+    #map { z-index: 0; }
+    .leaflet-control-zoom { border: none !important; box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; }
+    .leaflet-bar a { background-color: #fff !important; color: #475569 !important; border-bottom: 1px solid #f1f5f9 !important; }
+    .leaflet-bar a:hover { background-color: #f8fafc !important; color: #0ea5e9 !important; }
+    .leaflet-popup-content-wrapper { border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 0; overflow: hidden;}
+    .leaflet-popup-content { margin: 12px 16px; font-family: 'Noto Sans SC', sans-serif;}
+
+    /* Marker 动画 */
+    .marker-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.3); transition: transform 0.2s; }
+    .marker-selected .marker-dot { transform: scale(1.5); animation: pulse-ring 2s infinite; }
+    @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(var(--theme-rgb), 0.7); } 
+    /* 临时定位 Marker（与行程永久标记区分） */
+    .temp-marker-icon{
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      position: relative;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,.9);
+      border: 2px solid rgba(249,115,22,.95); /* orange */
+      box-shadow: 0 12px 28px rgba(2,6,23,.20);
+    }
+    .temp-marker-icon::before{
+      content:"";
+      position:absolute;
+      inset:-12px;
+      border-radius:999px;
+      background: radial-gradient(circle, rgba(249,115,22,.22), transparent 60%);
+      animation: tempPulse 1.25s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .temp-marker-dot{
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: rgba(249,115,22,.95);
+      box-shadow: 0 6px 14px rgba(249,115,22,.35);
+    }
+    @keyframes tempPulse{
+      0%,100%{ transform: scale(.85); opacity: .9; }
+      50%{ transform: scale(1.12); opacity: .55; }
+    }
+    .leaflet-tooltip.temp-marker-label{
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(15,23,42,.10);
+      color: rgba(15,23,42,.92);
+      font-family: 'Noto Sans SC', sans-serif;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      box-shadow: 0 12px 30px rgba(2,6,23,.18);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .leaflet-tooltip.temp-marker-label::before{
+      border-top-color: rgba(255,255,255,.92);
+    }
+    .temp-marker-flash .temp-marker-icon{
+      animation: tempFlash 550ms ease-in-out 1;
+    }
+    @keyframes tempFlash{
+      0%{ transform: scale(1); }
+      30%{ transform: scale(1.12); }
+      100%{ transform: scale(1); }
+    }
+70% { box-shadow: 0 0 0 15px rgba(var(--theme-rgb), 0); } 100% { box-shadow: 0 0 0 0 rgba(var(--theme-rgb), 0); } }
+
+    /* 地图自定义控件区 (左下角) */
+    .map-controls { position: absolute; bottom: 24px; left: calc(var(--nav-width, 288px) + 24px); z-index: 400; display: flex; flex-direction: column; gap: 10px; transition: left 0.3s; }
+    @media (max-width: 768px) { .map-controls { left: 104px; bottom: 24px; } }
+    .map-btn { width: 44px; height: 44px; background: #fff; border-radius: 12px; display: grid; place-items: center; color: #475569; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: all 0.2s; cursor: pointer; border: 1px solid #f1f5f9;}
+    .map-btn:hover { color: #0ea5e9; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+    .map-btn.active { background: #0ea5e9; color: #fff; }
+
+    
+    /* 全屏预览区 */
+    .media-preview { position: fixed; inset: 0; background: rgba(0,0,0,.95); z-index: 99999; opacity: 0; pointer-events: none; transition: opacity var(--t); backdrop-filter: blur(10px); touch-action: none; }
+    .media-preview.active { opacity: 1; pointer-events: auto; }
+    .preview-slider { display: flex; height: 100%; transition: transform var(--t); will-change: transform; }
+    .preview-slider.is-dragging { transition: none; }
+    .preview-item { min-width: 100%; height: 100%; display: grid; place-items: center; padding: 20px; overflow: hidden; }
+    /* 关键：用视口限制 max-height，保证“完整显示”，并为缩放/拖拽预留空间 */
+    .preview-content { 
+      display: block;
+      max-width: min(96vw, 1280px); 
+      max-height: 86vh; 
+      width: auto; height: auto;
+      object-fit: contain; 
+      user-select: none; 
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
+      transform-origin: center center;
+      transition: transform 0.18s ease-out; 
+      cursor: zoom-in;
+    }
+    .preview-content.is-zoomed { cursor: grab; }
+    .preview-content.is-zoomed:active { cursor: grabbing; }
+    .preview-toolbar { position: absolute; top: 0; left: 0; right: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent); z-index: 10; pointer-events: none; }
+    .toolbar-btn { pointer-events: auto; width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); display: grid; place-items: center; cursor: pointer; transition: all 0.2s; backdrop-filter: blur(4px); }
+    .toolbar-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+    .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; width: 50px; height: 50px; background: transparent; color: rgba(255,255,255,0.5); font-size: 2rem; border: none; cursor: pointer; transition: color 0.2s; }
+    .nav-btn:hover { color: #fff; }
+    #prev-btn { left: 20px; } #next-btn { right: 20px; }
+    .hint-toast { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: #000; padding: 8px 16px; border-radius: 20px; font-size: 0.875rem; font-weight: 500; opacity: 0; transition: opacity 0.3s; z-index: 20; pointer-events: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2);}
+
+
+    /* 全局 Toast */
+    #toast-container { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 100000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+    .toast { background: #fff; color: #1e293b; padding: 12px 24px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); font-weight: 500; font-size: 0.875rem; display: flex; align-items: center; gap: 8px; transform: translateY(-20px); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid #f1f5f9; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast-success { color: #10b981; }
+    .toast-info { color: #0ea5e9; }
+
+    /* 加载动画 */
+    .page-loading { position: fixed; inset: 0; z-index: 999999; display: grid; place-items: center; background: #fff; transition: opacity 0.5s; }
+  </style>
+</head>
+<body class="flex w-screen h-screen text-slate-700">
+
+  <!-- 全局加载 -->
+  <div class="page-loading" id="page-loader" aria-live="polite">
+    <div class="text-center">
+      <div class="w-16 h-16 rounded-full bg-sky-100 flex items-center justify-center mx-auto mb-4 relative">
+        <i class="fa-solid fa-compass text-sky-500 text-3xl animate-spin" style="animation-duration: 3s;"></i>
+        <div class="absolute inset-0 rounded-full border-4 border-sky-200 border-t-sky-500 animate-spin"></div>
+      </div>
+      <h2 class="text-xl font-bold text-slate-800 tracking-tight">新加坡7天访学行程</h2>
+      <p class="text-slate-400 text-sm mt-1">珍藏这段记忆...</p>
+    </div>
+  </div>
+
+  <!-- 全局 Toast 容器 -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- 左侧导航 -->
+  <aside id="main-nav" class="fixed left-0 top-0 bottom-0 w-20 md:w-72 flex flex-col transition-all duration-300 shadow-xl shadow-slate-200/50">
+    <header class="p-6 md:p-8 border-b border-slate-100 bg-white/50">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight hidden md:block cursor-pointer hover:text-sky-500 transition-colors" onclick="showOverview()" tabindex="0" title="回到总览">
+            新加坡<span class="text-sky-500">7天访学</span>
+          </h1>
+          <div class="md:hidden text-center text-sky-600 font-extrabold text-xl tracking-tight cursor-pointer" onclick="showOverview()">新加坡</div>
+          <p class="text-[10px] md:text-xs font-bold text-slate-400 mt-1 md:mt-2 tracking-widest uppercase">2026.01.24 - 01.30</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="px-4 py-2 mt-2 hidden md:block">
+      <button onclick="showOverview()" class="w-full text-left px-4 py-3 rounded-xl bg-slate-50 hover:bg-sky-50 text-slate-600 hover:text-sky-600 transition-colors flex items-center gap-3 border border-slate-100" tabindex="0">
+        <i class="fa-solid fa-layer-group text-lg"></i>
+        <span class="font-bold text-sm">行程总览</span>
+      </button>
+    </div>
+
+    <nav id="nav-list" class="flex-1 overflow-y-auto py-2 px-2 md:px-4 space-y-1" role="navigation" aria-label="行程列表"></nav>
+
+    <footer class="p-5 border-t border-slate-100 bg-slate-50/50 hidden md:block">
+      <div class="flex justify-between items-center mb-2">
+        <span class="text-xs font-bold text-slate-500">探索进度</span>
+        <span class="text-xs font-bold text-sky-500" id="progress-text">0/7</span>
+      </div>
+      <div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden mb-3">
+        <div id="progress-bar-nav" class="h-full bg-sky-500 transition-all duration-500 w-0 rounded-full"></div>
+      </div>
+      <div class="flex justify-between items-center">
+        <p class="text-[10px] text-slate-400">珍藏这段记忆</p>
+        <button onclick="clearHistory()" class="text-[10px] text-slate-400 hover:text-red-500 underline decoration-slate-300 underline-offset-2 transition-colors" title="清除浏览记录">清除记录</button>
+      </div>
+    </footer>
+  </aside>
+
+  <!-- 地图容器 -->
+  <main id="map" class="absolute inset-0 pl-20 md:pl-72 h-full w-full bg-slate-50"></main>
+
+  <!-- 地图悬浮控制台 -->
+  <div class="map-controls">
+    <button id="btn-reset-view" class="map-btn" title="回到全局视角" aria-label="回到全局视角"><i class="fa-solid fa-earth-asia"></i></button>
+    <button id="btn-toggle-route" class="map-btn active" title="显示/隐藏路线" aria-label="切换路线显示"><i class="fa-solid fa-route"></i></button>
+    <button id="btn-clear-temp-marker" class="map-btn" title="清除临时标记" aria-label="清除临时标记"><i class="fa-solid fa-eraser"></i></button>
+    <button id="btn-play" class="map-btn" title="自动播放旅程" aria-label="自动播放"><i class="fa-solid fa-play"></i></button>
+  </div>
+
+  <!-- 详情侧滑面板 -->
+  <section id="detail-panel" class="fixed right-0 top-0 h-full w-full md:w-[680px] transform translate-x-full flex flex-col bg-white">
+    <button id="btn-close-panel" class="absolute top-6 right-6 z-50 p-3 bg-white/90 backdrop-blur rounded-full text-slate-400 hover:text-sky-500 shadow-sm border border-slate-100 transition-all focus:outline-none focus:ring-2 focus:ring-sky-200" aria-label="关闭面板" tabindex="0">
+      <i class="fa-solid fa-xmark text-lg"></i>
+    </button>
+    
+    <div id="panel-content" class="flex-1 overflow-y-auto" style="overscroll-behavior: contain;"></div>
+  </section>
+
+  <!-- 全屏媒体预览 -->
+  <div class="media-preview" id="media-preview" role="dialog" aria-modal="true">
+    <div class="preview-toolbar">
+      <div class="text-white font-medium text-sm drop-shadow-md" id="preview-counter">1 / 1</div>
+      <div class="flex gap-3">
+        <button class="toolbar-btn" id="btn-copy-name" title="复制媒体名称"><i class="fa-solid fa-link"></i></button>
+        <button class="toolbar-btn" id="btn-close-preview" aria-label="关闭预览"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+    </div>
+    
+    <button class="nav-btn" id="prev-btn" aria-label="上一张"><i class="fa-solid fa-chevron-left"></i></button>
+    <div class="preview-slider" id="preview-slider"></div>
+    <button class="nav-btn" id="next-btn" aria-label="下一张"><i class="fa-solid fa-chevron-right"></i></button>
+
+    <div class="hint-toast" id="preview-hint">双击缩放 · 左右滑动切换 · ESC退出</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+  <script>
+    /********************
+     * 1) 数据结构层 (扩充了情绪、语录和关键词)
+     ********************/
+    const tripData = [
+      {
+        id: 1, date: "2026.01.24", title: "启程与抵达", subtitle: "Day 1 / 西安—上海—新加坡", location: "Rendezvous Hotel Singapore（新加坡龙都大酒店）", coords: [1.3644, 103.9915],
+        icon: "fa-plane-arrival", color: "#0ea5e9", bg: "bg-sky-50", text: "text-sky-500",
+        mood: "🛫", quote: "辞家千里又千里，务必争气再争气，不负青春不负己。", keywords: [
+          "西安咸阳机场",
+          "上海浦东国际机场",
+          "樟宜机场",
+          "Rendezvous Hotel Singapore",
+          "MU2295",
+          "C919"
+        ],
+                category: "city",
+        learning: [
+          "从西安咸阳机场出发，经上海浦东转机，夜晚抵达新加坡樟宜机场，完成入境与落地交通衔接。",
+          "首次体验国际航班行李托运与登机流程，在T5航站楼约50分钟完成相关手续。",
+          "第一次乘坐飞机与首次出国的经历，让我更深刻体会到父母一路托举的分量，也更懂得珍惜机会。"
+        ],
+        visit: [
+          {
+            name: "樟宜机场 Changi Airport",
+            desc: "夜晚20:30左右抵达T3航站楼，取行李、与老师汇合并办理电话卡。",
+            coords: [1.3644, 103.9915],
+          }
+          ,          {
+            name: "Rendezvous Hotel Singapore",
+            desc: "当晚回到酒店办理入住；窗外飞机与车流声交织，成了一个几乎无眠的夜晚。",
+            coords: [1.3009, 103.8487],
+          }
+        ],
+        output: {
+          reflection: "第一天是“启程、转机与适应”。一次难忘的早起、第一次坐飞机、第一次出国——新奇之余，也在提醒自己：要努力，不负青春。",
+          picks: [0, 1],
+        },
+content: `
+          <p>2026年1月24日。DAY1：乘坐飞机，西安咸阳机场——>上海浦东机场——>新加坡樟宜机场；晚上入住Rendezvous Hotel Singapore（新加坡龙都大酒店）。2025年1月24日，激动人心的新加坡之旅正式开启。或许是宾馆隔音不佳，窗外飞机起降声、车辆启动与疾驰声、邻近房间开关门声交织在一起，注定这是一个不眠的凌晨。我不时起床去洗手间，又反复查看两个手机里设下的十几个闹钟，索性没有再勉强入睡。凌晨三点，我按时起床匆匆洗漱，羽绒服套短袖、加绒裤套夏裤，自己也忍不住觉得好笑；期间还接到妈妈的“叫醒服务”（其实我已起床）。收拾好行李后，3:50准时下楼等待酒店接机车。同车的还有一对中年夫妇带着小男孩，似乎是去旅行，航班在T3航站楼；另有一位留短发的小伙子与我年龄相仿，同样是T5航站楼起飞。十几分钟车程后到达532门（国内出发，B、C值机区，适合国内经济舱托运行李旅客）。下车时发现口袋里还有一包刚拆封的烟，我纠结片刻，最终还是带进了机场。由于前一天已与蔡同学约好在机场会合一同出发，他说大约5:00到，我便先等候。期间尝试用航旅纵横查看订单，却没有反应，那一刻确实有些慌，以为机票未买上（后来证明担心多余）。从3:20一直等到5:10，才等到一起出发的小伙伴。这是我第一次坐飞机。因为购买的是去新加坡的团体票，最初走国内航班行李托运未能通过，在工作人员指引下转到国际航班托运，顺利拿到纸质机票。网上说西安咸阳机场T5航站楼登机耗时长，但我个人感觉尚可，约50分钟便完成。随后是漫长等待：6:00一直等到7:30才开始登机。期间我替同伴用大疆拍了一段走路经过加速带的视频。不知从何时起，我不太喜欢拍带人的照片，却会偶尔记录身边风景。临近登机还遇到一群小学生，在几位老师带领下去新加坡旅游。MU2295是我第一次乘坐的航班，机型为C919。飞机起飞的一刹那，我脑海里闪过许多过往：从村小到镇中学、县高中，再到西安的大学；大学期间也去过甘肃下石节、青海西宁、陕西延安、内蒙古鄂尔多斯、山西大同、深圳，如今又来到新加坡。一路走来，是父母的托举让我看见他们未曾看见的世界，我也应当珍惜这次出国机会。登机流程不算复杂。坐飞机的失重与超重感，确有几分像坐海盗船；我位置在机翼附近，云层呈波浪状、密密麻麻，真切感受到发动机的强劲推力。航班8:00准时起飞，9:00左右发餐，味道尚可。小憩后抵达上海浦东国际机场，期间经历海关检查。检查后才发现，从浦东机场去登机口需要乘坐地铁。又经历了约3小时等待，终于登机飞往新加坡。登机时再次遇到那群小朋友，颇觉有缘。飞机离港时，我看见海面上渔船与游艇忙碌穿梭；机上又用了一餐，随后沉沉睡去，醒来已是夜晚。飞机自平流层底部开始下落，我体验到落日余晖的温柔。晚上8:30左右降落樟宜机场，落地流程还算顺畅；可惜抵达的是T3航站楼，并非T5。取行李却耗时很久：行李在一条很长的传送带上循环，错过就要再等一圈，时间显得格外漫长。拿到行李箱后到与老师汇合处，老师帮我们看行李，我们一同办理电话卡，过程很方便。只是当晚在酒店申请Gemini仍然失败。随后我去星巴克给外甥女买了鱼尾狮玩偶。等人齐后，我们乘大巴回到酒店。第一天的行程大致如此：一次难忘的早起、初次坐飞机的体验、首次出国的经历，一切都新鲜而难忘。</p>
+          <div class="bg-sky-50/50 p-5 rounded-2xl border border-sky-100/50 mt-6">
+            <h4 class="font-bold text-sky-700 text-sm mb-1 uppercase tracking-wider"><i class="fa-solid fa-bed mr-2"></i>入住酒店</h4>
+            <p class="text-slate-700 font-semibold">Rendezvous Hotel Singapore (新加坡龙都大酒店)</p>
+            <p class="text-slate-500 text-sm mt-1">这一夜外界噪声不断，几乎未曾合眼；但也正是在这种“睡不着”的兴奋与紧张里，旅程悄然拉开序幕。</p>
+          </div>
+        `,
+        images: ["day1.1.jpg","day1.2.jpg","day1.3.jpg","day1.4.jpg"] // 模拟数据
+      },
+      {
+        id: 2, date: "2026.01.25", title: "访学开课与夜游城市", subtitle: "Day 2 / NTU & 夜间城市漫步", location: "南洋理工大学（NTU）", coords: [1.2816, 103.8636],
+        icon: "fa-vr-cardboard", color: "#ec4899", bg: "bg-pink-50", text: "text-pink-500",
+        mood: "🎒", quote: "街道上不同肤色的人来来往往，语言各异、风格各异，竟有一种梦幻感。", keywords: [
+          "NTU",
+          "NBS",
+          "The Hive",
+          "牛车水",
+          "猫山王榴莲",
+          "滨海湾金沙",
+          "超级树",
+          "鱼尾狮公园",
+          "Parklane Shopping Mall"
+        ],
+                category: "campus",
+        learning: [
+          "上午参观NTU并分组导览，先到商学院（NBS），并在此合影留念；随后参观“The Hive”等校园建筑。",
+          "下午参加欢迎仪式与课程1《虚拟现实与元宇宙》（14:00-17:00），全英教学，整体听得有些懵懂。",
+          "课程与参访让我更关注三点：创新驱动、跨学科融合、产学研结合。"
+        ],
+        visit: [
+          {
+            name: "南洋理工大学 NTU",
+            desc: "上午10:00-12:00参观校园：商学院（NBS）、“The Hive（蜂巢/小笼包楼）”等。",
+            coords: [1.3483, 103.6831],
+          }
+          ,          {
+            name: "牛车水 Chinatown",
+            desc: "傍晚出发夜游：尝试猫山王榴莲、在街区购买鱼尾狮玩偶，感受多元文化的烟火气。",
+            coords: [1.283, 103.844],
+          }
+          ,          {
+            name: "滨海湾花园 Gardens by the Bay",
+            desc: "夜间步行至滨海湾花园，打卡滨海湾金沙酒店夜景与Solar Supertrees（超级树）。",
+            coords: [1.2816, 103.8636],
+          }
+        ],
+        output: {
+          reflection: "从校园到城市夜景，学习与生活并行。多元街巷、海风与灯光同框，让人既兴奋也沉浸；课堂里提到的创新、融合与结合，也在城市细节里悄悄“落地”。",
+          picks: [2, 3],
+        },
+        knowledge: {
+          terms: [
+            "VR（虚拟现实）",
+            "元宇宙（Metaverse）"
+          ],
+          learned: [
+            "创新驱动：无论是NTU的教学改革和校园建设，还是VR技术的发展历程，都体现了创新的核心作用。",
+            "跨学科融合：解决复杂问题与催生突破，往往需要不同学科之间的交叉与融合。",
+            "产学研结合：学术研究为商业创新奠基，成功商业化又反过来推动技术普及与进一步发展。"
+          ],
+          explore: [
+            {
+              label: "The Hive（蜂巢/小笼包楼）",
+              url: "#",
+            }
+          ],
+        },
+content: `
+          <p>2026年1月25日。DAY2：早上8:45从酒店乘大巴前往南阳理工大学（NTU）；上午10:00-12:00参观NTU；中午在NTU食堂自理午餐；下午14:00-17:00欢迎仪式并学习课程1《虚拟现实与元宇宙》；17:15返回酒店Rendezvous Hotel Singapore（新加坡龙都大酒店）。晚上继续前往：Chinatown（牛车水）尝试猫山王榴莲、购买鱼尾狮玩偶——>GARDENS BY THE BAY（滨海湾花园）逛园区并打卡滨海湾金沙酒店夜景和Solar Supertrees（超级树）——>Merline Park（鱼尾狮公园）拍照打卡——>Parklane Shopping Mall吃汉堡（也碰巧提前为小伙伴过了一次生日：实际生日为阳历2026年1月26日，阴历12月8日）。23:40回到酒店休息；当晚21:00-22:30酒店签到未成功。这一天是我来到新加坡的第二天，也是正式上课的第一天。因为8:45出发，我大概8点左右起床，洗漱后到楼下7-11买了一块面包当早餐。作为访学第一天，大家统一穿着NTU文化衫。乘车途中，透过大巴车窗，我第一次在白天完整感受到热带气候的风景：不认识名字的植物不断掠过，像一台持续播放的“沿途电视”。大巴驶入校园后，首先抵达NTU商学院（NBS），据说是亚洲最大的木结构建筑，老师与同学们在此合影。随后我们分组，在不同学姐带领下参观校园。我们先来到“蒸小笼包楼”——The Hive（蜂巢）。它由12座倒置的锥型塔楼组成，塔楼之间以空中走廊连接，主要用于教学与自习，内部设有研讨室、教室和休闲区。我还了解到其建筑师为托马斯·郝斯维克（代表作包括上海世博会英国馆、纽约Vessel）。之后看到华裔馆，但因当天是周日展馆闭馆，未能入内，只在外部观望；又参观南洋大学建校纪念碑（1958）及旧校门（1955），看起来都经历过翻新。中午在就近餐厅用餐，米饭与菜品自选，价格7.5新元；按汇率5.4换算约40-50元人民币，确实不便宜。饭后沿小池塘散步，学姐说此处有时会有大型蜥蜴出没；池塘里鱼很多，但不可随意垂钓，只有钓鱼社团成员培训合格后才能钓，且钓完需放回池塘。下午课程时长3小时：课程1《虚拟现实与元宇宙》，全英教学，我听得有些懵懂。课后我们无缝衔接前往牛车水（Chinatown），我至今也不太明白为什么这样翻译。地铁站出来像一条热闹的小吃街，店铺鳞次栉比。新加坡作为全球四大金融中心之一（其他三个是纽约、伦敦、香港），多元文化在这里体现得淋漓尽致：不同肤色的人群穿梭其间，穿衣风格各异，语言各异，带来一种“梦幻”的观感，这也与新加坡作为旅游国家密切相关。我们在街边遇到一家毛绒玩具店，发现一款摇晃会发声的玩具，颇为搞笑；对比后我买下了一款质感更好的。随后在十字路口闻到榴莲摊位飘来的独特气味。我们先在一家店看到成色不错的榴莲，价格也尚可；转弯后又看到另一家更便宜的，买两个送一个，于是盲开三个。开第一个时觉得开歪了，没想到最后第一个反而最好，个人怀疑卖家挑榴莲确有手法。总之，在新加坡吃上榴莲也算完成一件事。只是我总觉得味道偏苦（别人都说甜），想来可能是我并不喜欢榴莲气味所致。之后乘地铁前往滨海湾花园。出站迎面海风吹来，街旁还有不少人在跑步。站在围栏边任海风扑面，那一刻格外惬意。转过拐角，滨海湾金沙酒店与超级树映入眼帘：金沙酒店由三座连成一体的楼体组成，顶部空中花园形似一架没有机翼的飞机；超级树共有18棵，既充当垂直花园，也在夜晚借助灯光与媒体投射呈现活力。我们夜间进入滨海湾花园，印象里并未看到太多，只偶尔遇到散步或骑行的人。随后一行人前往鱼尾狮公园，与高8.6米、重70吨的混凝土鱼尾狮主雕像及高2米的小型雕像合影，结束打卡。因玩得尽兴，晚饭来不及正经吃，便在附近找快餐“垫吧”。最终在Parklane Shopping Mall吃汉堡；得知同行小伙伴第二天过生日，大家提前送上祝福，这也成了当晚难忘的小插曲。</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+              <h4 class="font-bold text-slate-800 text-sm flex items-center mb-3"><i class="fa-solid fa-bolt text-yellow-400 mr-2"></i>晚间行程</h4>
+              <ul class="text-sm text-slate-600 space-y-2.5">
+                <li class="flex items-start"><i class="fa-solid fa-check text-green-500 mt-0.5 mr-2"></i>牛车水（Chinatown）：街区热闹、人群多元，尝试猫山王榴莲并购买鱼尾狮玩偶；也在街边“盲开”榴莲，留下几分哭笑不得的趣味。</li>
+                <li class="flex items-start"><i class="fa-solid fa-check text-green-500 mt-0.5 mr-2"></i>滨海湾花园（Gardens by the Bay）：海风拂面后转角见金沙与超级树；夜色下的Solar Supertrees灯光绚烂，城市公共空间的“科技感”与“生活感”同框出现。</li>
+                <li class="flex items-start"><i class="fa-solid fa-check text-green-500 mt-0.5 mr-2"></i>鱼尾狮公园打卡合影（主雕像高8.6米、重70吨；另有高2米小雕像），随后前往Parklane Shopping Mall吃汉堡，并提前为小伙伴送上生日祝福。</li>
+              </ul>
+            </div>
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-5 rounded-2xl border border-amber-100">
+              <h4 class="font-bold text-amber-700 text-sm mb-2"><i class="fa-solid fa-cake-candles mr-2"></i>课程小记</h4>
+              <p class="text-slate-700 text-sm leading-relaxed">下午14:00-17:00参加欢迎仪式并学习课程1《虚拟现实与元宇宙》，全英教学。课程与参访让我更关注三点：其一，创新驱动始终是推动进步的核心力量；其二，跨学科融合往往催生重大突破；其三，产学研结合既能奠基商业化，也能反向推动技术普及与发展。</p>
+            </div>
+          </div>
+        `,
+        images: ["day2.1.jpg","day2.2.jpg","day2.3.jpg","day2.4.jpg","day2.5.jpg","day2.6.jpg","day2.7.jpg","day2.8.jpg",
+          "day2.9.jpg","day2.10.jpg","day2.11.jpg","day2.12.jpg","day2.13.jpg","day2.14.jpg","day2.15.jpg","day2.16.jpg","day2.17.jpg"]
+      },
+      {
+        id: 3, date: "2026.01.26", title: "反思式记录与城市夜色", subtitle: "Day 3 / NTU & 乌节路", location: "NTU — ION Orchard — 克拉码头", coords: [1.3483, 103.6831], // NTU coords
+        icon: "fa-robot", color: "#8b5cf6", bg: "bg-violet-50", text: "text-violet-500",
+        mood: "🧠", quote: "有些事情，只有亲身经历之后，才会有那种真切的感觉。", keywords: [
+          "NTU",
+          "实验室参访",
+          "课程2-人工智能",
+          "荨麻疹",
+          "中医药店",
+          "ION Orchard",
+          "克拉码头",
+          "Mr.Coconut",
+          "7-11泡面"
+        ],
+                category: "campus",
+        learning: [
+          "从第三天开始，我不再只用流水账或照片堆砌，而希望把“所见所闻”写成“所思所想”。",
+          "对比不同场景下的VR体验，也顺带思考了技术、产品与使用环境（例如网络环境）对体验的影响。",
+          "旅行对我而言更偏向慢节奏：走走看看、了解生活日常、品尝美食、体会文化，而非只为拍照打卡。"
+        ],
+        visit: [
+          {
+            name: "NTU 参访与课程",
+            desc: "上午09:30-12:00实验室参访；下午14:00-17:00课程2《人工智能》；中午在Popeyes NTU就餐。",
+            coords: [1.3483, 103.6831],
+          }
+          ,          {
+            name: "ION Orchard（爱雍·乌节）",
+            desc: "晚间前往乌节路商圈，感受城市繁华与商业空间。",
+            coords: [1.3048, 103.8318],
+          }
+          ,          {
+            name: "克拉码头地铁站 Clarke Quay",
+            desc: "在克拉码头一带活动，并尝试Mr. Coconut饮品。",
+            coords: [1.2906, 103.8465],
+          }
+        ],
+        output: {
+          reflection: "把经历写成反思，比“记录发生了什么”更难，却更有价值。新加坡带来的新奇与冲击，让我再次确认：亲眼所见、亲身所感，远胜于听说与想象。",
+          picks: [8, 9],
+        },
+        knowledge: {
+          terms: [
+            "人工智能（AI）",
+            "网络环境（外网）"
+          ],
+          learned: [
+            "听说与想象，和亲眼所见、亲身体验之间，确有巨大差距。",
+            "国内想用外网与部分AI工具并不方便，短期难以改变，只能在规则内适应。",
+            "我更偏好慢节奏的旅行：走走看看、了解日常、品尝美食、体会文化。"
+          ],
+          explore: [
+            {
+              label: "慢节奏的旅行",
+              url: "#",
+            }
+          ],
+        },
+content: `
+          <p>2026年1月26日。DAY3：早上8:20从酒店乘大巴前往NTU；上午09:30-12:00实验室参访；中午在NTU学生餐厅就餐（Popeyes NTU）；下午14:00-17:00课程2《人工智能》；17:15返回酒店Rendezvous Hotel Singapore（新加坡龙都大酒店）。晚上因一位小伙伴突发荨麻疹，我们前往附近中医药店购买药物；随后到ION Orchard（爱雍·乌节，位于乌节路）以及克拉码头地铁站，尝试Mr. Coconut饮品；22:40返回酒店休息，并在酒店旁7-11吃了一份泡面。2025年1月26日（周一）。我逐渐意识到，若只用流水账或照片堆砌来为新加坡研学之旅画上句号，会留下遗憾。从第三天起，我想换一种方式记录：不仅写所见所闻，更写所思所想。这些文字未必会被别人看到，但我仍想认真记录下来。新加坡给我的整体印象很难用一个词概括：整洁、安逸，或许更贴近我的感受。初到异国，新奇的热带气候、形态奇怪的植物、独特的习俗，都带来一种强烈的冲击力——像高考后第一次拿到新手机时那种“新鲜感”。也因此更清晰地意识到：听过、看过，与亲眼所见、亲身体验之间，确有巨大的差距；有些事情，只有亲身经历之后才会有真切的感觉。上午的内容涉及VR。我戴上VR眼镜完成了一个简易发动机的组装，并不自觉地把在新加坡体验到的VR设备与之前在深圳体验过的那款做对比——坦率地说，新加坡这次的体验反而不如国内那款。后来我也在网上了解过一些VR眼镜产品，看到苹果Vision Pro确实很厉害，价格也同样“给力”。提到电子产品，我也想就网络环境谈一点个人认识：在国内使用外网通常需要“梯子”，这在法律层面存在风险。对于希望使用一些国外网站或AI工具的人（如GPT、Gemini、Manus、Grok、Claude），尤其是需要外网支持查阅文献的学术群体，这确实会带来不便。短期内或许难以改变，那就只能在遵守规则的前提下调整与适应。近来我还观察到：很多人旅行时更沉迷于拍照打卡。坦白说，我并不特别喜欢这种方式，但也能理解——到一个地方拍照留念，日后翻看也是一种回忆。只是网络上常见的“快餐式旅行”让我觉得并不理想。我更偏好慢节奏的旅行：放下杂事，在当地走走看看，了解当地人的生活日常，品尝美食，体会文化，在过程中沉下来认真感受。每个人有自己的偏好，我也希望未来能坚持按这样的方式去实践。</p>
+          <div class="bg-violet-50/50 p-5 rounded-2xl border border-violet-100/50 mt-6">
+            <h4 class="font-bold text-violet-700 text-sm mb-3"><i class="fa-solid fa-city mr-2"></i>夜间行程</h4>
+            <p class="text-sm text-slate-700 leading-relaxed mb-3">晚间因同伴突发荨麻疹，我们先去附近中医药店买药；随后前往ION Orchard与克拉码头一带，终于喝到心心念念的Mr. Coconut。回到酒店时已是22:40，最后在7-11用一份泡面结束了这一天。</p>
+            <div class="flex items-center gap-3 bg-white p-3 rounded-xl border border-violet-100">
+              <div class="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-xl">✨</div>
+              <div>
+                <p class="font-bold text-slate-800 text-sm">执念达成</p>
+                <p class="text-xs text-slate-500">终于喝到了Mr. Coconut；深夜回到酒店后在7-11买的泡面，成了另一种难得的慰藉。</p>
+              </div>
+            </div>
+          </div>
+        `,
+        images: ["day3.1.mp4","day3.2.jpg","day3.3.jpg","day3.4.jpg","day3.5.jpg","day3.6.mp4","day3.7.mp4","day3.8.jpg","day3.9.jpg","day3.10.jpg","day3.11.jpg","day3.12.jpg","day3.13.jpg"]
+      },
+      {
+        id: 4, date: "2026.01.27", title: "双校参访与海岛傍晚", subtitle: "Day 4 / NTU & NUS & Sentosa", location: "NTU — NUS — 圣淘沙", coords: [1.2494, 103.8213],
+        icon: "fa-umbrella-beach", color: "#10b981", bg: "bg-emerald-50", text: "text-emerald-500",
+        mood: "🌊", quote: "站在“亚洲的最南端”，遥望海面，“海阔任鱼游，天高任鸟飞”的感觉油然而生。", keywords: [
+          "课程3-数字孪生",
+          "NUS参访",
+          "Sentosa",
+          "巴拉湾吊桥",
+          "亚洲大陆最南端",
+          "直角椰子树",
+          "海里游泳",
+          "烟花",
+          "孔雀"
+        ],
+                category: "attraction",
+        learning: [
+          "上午在NTU参加课程3《现实计算、人机交互和数字孪生》，内容与前几天一脉相承，但与自身专业衔接不多，因此记录以感受为主。",
+          "下午参访新加坡国立大学（NUS），体会到其相较NTU更具本土化与国际化交织的气质。",
+          "在圣淘沙第一次下海游泳与傍晚海风的体验，让我更清楚自己在“拍照与不拍照”之间的心理拉扯，也提醒自己需要改变。"
+        ],
+        visit: [
+          {
+            name: "NTU 课程与午餐",
+            desc: "上午08:30-11:30课程3《现实计算、人机交互和数字孪生》；中午在NTU学生餐厅就餐。",
+            coords: [1.3483, 103.6831],
+          }
+          ,          {
+            name: "新加坡国立大学 NUS",
+            desc: "13:30乘大巴前往NUS参访，感受不同校园氛围。",
+            coords: [1.2966, 103.7764],
+          }
+          ,          {
+            name: "圣淘沙 Sentosa",
+            desc: "15:00前往圣淘沙：走过巴拉湾吊桥，打卡亚洲大陆最南端，海里游泳并在Palawan Green附近看到烟花，偶遇孔雀。",
+            coords: [1.2494, 103.8213],
+          }
+        ],
+        output: {
+          reflection: "学术与海风同框的一天。海浪的咸涩、傍晚的舒适与安逸，以及对“拍照纠结”的自我剖析，都让这一天的记忆更立体。",
+          picks: [4, 5],
+        },
+        knowledge: {
+          terms: [
+            "数字孪生（Digital Twin）"
+          ],
+          learned: [
+            "参访NUS让我感受到其相较NTU更本土化，也更国际化。",
+            "第一次在海里游泳，新奇之余也被大浪“教育”了一番：海水很咸。",
+            "拍照的纠结并无必要；需要正视并改变这种反复拉扯的心态。"
+          ],
+          explore: [
+            {
+              label: "亚洲大陆的最南端",
+              url: "#",
+            }
+          ],
+        },
+content: `
+          <p>2026年1月27日。DAY4：早上7:20从酒店乘大巴前往NTU；上午08:30-11:30课程3《现实计算、人机交互和数字孪生》；中午在NTU学生餐厅就餐；13:30乘大巴去新加坡国立大学（NUS）参访，下午完成参访；15:00前往Sentosa（圣淘沙），打卡THE SOUTHERNMOST POINT OF CONTINENTAL ASIA（亚洲大陆的最南端）。在圣淘沙，我们走过巴拉湾海峡网红吊桥，看到直角椰子树；在沙滩点（Emerald pavilion）下海游泳；在Palawan Green活动时，看到了不远处的烟花表演，也偶遇一只孔雀；随后返回酒店Rendezvous Hotel Singapore（新加坡龙都大酒店）。2025年1月27日（周二）。关于课程内容与参访过程，我想简要记录自己的理解：课程主题与前几天延续一致，但与我自身专业方向衔接不多，因此不再赘述。下午参访NUS时，我感受到这所学校相较于NTU更具新加坡本土化，同时也更国际化。参访结束后，我们前往圣淘沙海滩。我第一次真正体验在海里游泳的感觉，新奇之余也有些狼狈：海浪很大，再加上我不会游泳，喝了好几口海水，咸得发苦。傍晚站在沙滩边，海风迎面而来，那种舒适与安逸是我此前很少体验到的。站在“亚洲大陆的最南端”，旁边是一棵直角椰子树。遥望海面，“海阔任鱼游，天高任鸟飞”的感觉油然而生。或许是自己文学功底有限，难以更深刻地描述当时内心的情感变化。其实今天我也拍了不少照片。后来认真想了想，或许是自己太矫情，总在“想拍照”与“担心合不合适”之间纠结：我不会主动让别人给我拍，但又希望留下一些关于自己的照片；一旦没有，心里又会失落，便找理由说自己不喜欢拍照。我认为这完全没有必要。这样的纠结不仅体现在拍照上，也出现在很多事情里，甚至有些病态，需要纠正。是时候做出一些改变与行动了。</p>
+          <div class="bg-emerald-50/50 p-5 rounded-2xl border border-emerald-100/50 mt-6 relative overflow-hidden">
+            <i class="fa-solid fa-umbrella-beach absolute -right-4 -bottom-4 text-7xl text-emerald-100/50 -rotate-12"></i>
+            <h4 class="font-bold text-emerald-700 text-sm mb-2 relative z-10"><i class="fa-solid fa-sun mr-2"></i>圣淘沙傍晚</h4>
+            <p class="text-sm text-slate-700 leading-relaxed relative z-10 mb-3">参访结束后登岛圣淘沙：走过巴拉湾吊桥，打卡“亚洲大陆最南端”，第一次下海游泳。海浪大、海水很咸；傍晚海风袭来，却又格外舒适与安逸。</p>
+            <p class="text-sm text-emerald-600 font-medium relative z-10">在Palawan Green附近活动时，我们还看到不远处的烟花绽放，并偶遇一只孔雀。</p>
+          </div>
+        `,
+        images: ["day4.1.jpg","day4.2.jpg","day4.3.jpg","day4.4.jpg","day4.5.jpg","day4.6.jpg","day4.7.jpg","day4.8.jpg","day4.9.jpg","day4.10.jpg","day4.11.jpg","day4.12.jpg","day4.13.jpg","day4.14.mp4","day4.15.jpg","day4.16.mp4","day4.17.jpg","day4.18.jpg","day4.19.mp4","day4.20.jpg","day4.21.jpg","day4.22.jpg","day4.23.jpg","day4.24.jpg","day4.25.jpg","day4.26.jpg"]
+      },
+      {
+        id: 5, date: "2026.01.28", title: "城市重建局与团队插曲", subtitle: "Day 5 / URA & Chinatown", location: "新加坡城市重建局（URA）— 牛车水", coords: [1.2796, 103.8456],
+        icon: "fa-map-location-dot", color: "#f97316", bg: "bg-orange-50", text: "text-orange-500",
+        mood: "🐸", quote: "为了去吃这顿饭，我们跑了好远；最后还好，这顿田鸡粥相当好吃。", keywords: [
+          "URA",
+          "鱼尾狮公园",
+          "Mr.coconut",
+          "牛车水伴手礼",
+          "椰子汁",
+          "田鸡粥",
+          "牛蛙",
+          "沙县小吃",
+          "结题汇报"
+        ],
+                category: "city",
+        learning: [
+          "参观新加坡城市重建局，直观感受到城市从落后走向如今的过程与规划思路（尽管我当天兴趣不算强）。",
+          "在置办伴手礼与街区漫步中，继续体会“日常化”的城市生活：饮食、消费与街头细节。",
+          "小组结题任务引发的矛盾让我意识到：负责人需要主动协调冲突、明确分工与指令，团队才能顺畅运转。"
+        ],
+        visit: [
+          {
+            name: "新加坡城市重建局 URA",
+            desc: "上午参观并了解城市发展与规划展示。",
+            coords: [1.2931, 103.851],
+          }
+          ,          {
+            name: "鱼尾狮公园 Merlion Park",
+            desc: "11:00前往鱼尾狮公园，并购买Mr. Coconut饮品。",
+            coords: [1.2868, 103.8545],
+          }
+          ,          {
+            name: "牛车水 Chinatown",
+            desc: "下午在牛车水喝椰子汁、置办伴手礼；晚间外出品尝田鸡粥与牛蛙。",
+            coords: [1.2796, 103.8456],
+          }
+        ],
+        output: {
+          reflection: "这一天既有相对平淡的参观与购物，也有味蕾上的高光；更重要的是，小组协作的小波折，让我对“如何当负责人”有了更具体的反思。",
+          picks: [0, 1],
+        },
+        knowledge: {
+          terms: [
+            "新加坡城市重建局（URA）",
+            "结题汇报（小组）"
+          ],
+          learned: [
+            "参观城市重建局，了解新加坡从相对落后发展至今的过程。",
+            "为了田鸡粥与牛蛙跑了很远，但最后发现味道确实值得。",
+            "小组结题汇报的矛盾让我明白：负责人要会协调冲突、明确分工与指令。"
+          ],
+          explore: [
+            {
+              label: "“少县卜吃”的小插曲",
+              url: "#",
+            }
+          ],
+        },
+content: `
+          <p>2026年1月28日。DAY5：早上9:30从酒店乘大巴前往新加坡城市重建局参观；11:00前往鱼尾狮公园（买了份Mr. Coconut饮品）；随后返回酒店Rendezvous Hotel Singapore（新加坡龙都大酒店）。下午前往Chinatown（牛车水）喝椰子汁、买伴手礼；晚上去吃了田鸡粥和牛蛙（很好吃），随后返回酒店。2025年1月28日（周三）。今天整体比较平淡：参观了新加坡的城市重建局，了解新加坡如何从一个相对落后的国家发展至今。或许是自己没有认真听的缘故，我对这些内容的兴趣并不算强。下午跟随伙伴们去置办伴手礼，我自己没有买，计划到机场再统一购买。随后喝了一杯椰子汁，感觉并不太甜，椰肉也不如买的块状椰肉好吃——纯属个人口味。</p>
+          <div class="my-4 p-4 border-l-4 border-orange-400 bg-orange-50/30 text-sm text-slate-700 rounded-r-xl">
+            <p class="font-bold text-orange-600 mb-1">随手一记</p>
+            在鱼尾狮公园路上买了一杯Mr. Coconut；下午在牛车水穿梭置办伴手礼。椰子汁不算甜，但也算为这天增添了一点“日常感”。
+          </div>
+          <div class="bg-white p-5 rounded-2xl border border-orange-100 shadow-sm mt-6">
+            <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center"><i class="fa-solid fa-utensils text-orange-500 mr-2"></i>晚间与小组插曲</h4>
+            <p class="text-sm text-slate-600 mb-3">晚餐的重头戏是田鸡粥和牛蛙。为了这顿饭我们跑了很远，但最后发现确实值得——味道相当好。回程时还看到国内品牌“沙县小吃”，广告牌部分灯熄灭后变成“少县卜吃”，让人哭笑不得；也从中感受到中国品牌早已走出国门，去拥抱更大的世界。</p>
+            <div class="flex items-start gap-3 bg-orange-50 p-3 rounded-xl">
+              <i class="fa-solid fa-fire-burner text-orange-500 mt-1"></i>
+              <p class="text-sm text-slate-700">此外，晚上老师通知第二天要以小组为单位统一结题汇报。我们组内组长不太会协调，导致我与另外两名同学被孤立，甚至向带队老师汇报想把我们“踢出队伍”。老师也单独发消息让我们积极配合。问题在于组长并未给我们分配任务，直接把任务分给其他队员，并使用他们之前打比赛的成品继续推进。我并不认同：老师强调的是基于这几天所学做一个力所能及的小项目，而非搬来旧项目。但我不是组长，也无决定权；最初这组组长其实是我，后来有成员主动找老师想当组长，我便让出了位置——我的目标更多是体验新加坡的人文与生活。此事也提醒我：担任负责人时必须及时调解矛盾、明确分工；命令要具体，不能模糊，既要放手让成员去做，也要在关键处把关。</p>
+            </div>
+          </div>
+        `,
+        images: ["day5.1.jpg","day5.2.jpg","day5.3.jpg","day5.4.mp4","day5.5.jpg","day5.6.jpg","day5.7.jpg","day5.8.jpg","day5.9.jpg","day5.10.jpg","day5.11.jpg","day5.12.jpg","day5.13.jpg","day5.14.jpg"]
+      },
+      {
+        id: 6, date: "2026.01.29", title: "结课汇报与结业仪式", subtitle: "Day 6 / 汇报 & 证书", location: "NTU（结课汇报）", coords: [1.3483, 103.6831],
+        icon: "fa-graduation-cap", color: "#eab308", bg: "bg-yellow-50", text: "text-yellow-500",
+        mood: "🎓", quote: "证书只是薄薄一纸，却也见证了这一段奔波与经历。", keywords: [
+          "结课汇报",
+          "结业仪式",
+          "证书",
+          "小组除名",
+          "50新自助餐",
+          "余东璇街",
+          "Fair Price",
+          "海鲜"
+        ],
+                category: "campus",
+        learning: [
+          "上午休息，12:00出发前往NTU参加结课汇报与结业仪式（14:30-16:00）。",
+          "在小组协作的尴尬与他人的调侃中，我也看见了不同人的处世心态与承受力。",
+          "晚间以自助餐与逛超市作为收尾：用消费与生活细节观察在地日常。"
+        ],
+        visit: [
+          {
+            name: "NTU 结课汇报与结业仪式",
+            desc: "下午14:30-16:00进行结课汇报并参加结业仪式，随后领取证书。",
+            coords: [1.3483, 103.6831],
+          }
+          ,          {
+            name: "Fair Price 超市",
+            desc: "晚上吃完自助餐后前往余东璇街的Fair Price超市逛一逛。",
+            coords: [1.3018, 103.855],
+          }
+        ],
+        output: {
+          reflection: "这一天没有太多“风景”，更多是情绪与人际的复盘：尴尬、理解、调侃与自嘲交织。把经历咽下去，继续往前走。",
+          picks: [2, 3],
+        },
+content: `
+          <p>2026年1月29日。DAY6：上午休息；中午12:00从酒店乘大巴前往NTU；在NTU自行就餐；下午14:30-16:00结课汇报&结业仪式；16:10乘大巴返回酒店Rendezvous Hotel Singapore（新加坡龙都大酒店）。晚上18:00-20:00去吃了一顿自助餐，随后去余东璇街逛了逛超市（Fair Price）。2025年1月29日（周四）。这一天其实没有太多感触。上午我在酒店一直躺到12点，随后出发去NTU参加结课汇报。寝室当时也有些尴尬：小组汇报时，剩余几位成员在台上展示，甚至把我和另一位同学的名字从小组里除名。我能理解，我们确实没有什么贡献。更有意思的是，我瞥见旁边另一组在座的一位“大神”。当队员把证书递到他手中时，有人同样嘲笑了一句：“这就是我们这组啥也没做的那位啊。”而那位“大神”却面不改色地接过这本“本该属于他的证书”。那份心境与“脸皮”，某种意义上也值得我学习。下午我们去吃了一顿自助餐。自助餐以海鲜为主，我个人并不太感兴趣；吃个七七八八，也算一次难忘的体验。</p>
+          <div class="bg-yellow-50/50 p-5 rounded-2xl border border-yellow-100/50 mt-6">
+            <h4 class="font-bold text-yellow-700 text-sm mb-2"><i class="fa-solid fa-basket-shopping mr-2"></i>生活片段</h4>
+            <p class="text-sm text-slate-700 leading-relaxed mb-2">晚间吃完自助餐后，我们又去了余东璇街的Fair Price超市随意逛逛。逛超市总能最快看到当地生活的真实细节：商品、口味与日常的选择，都在货架上。</p>
+            <p class="text-sm text-slate-500">这一晚更像是对一周的收尾：把复杂情绪放一放，回到“生活本身”。</p>
+          </div>
+        `,
+        images: ["day6.1.jpg","day6.2.jpg","day6.3.jpg","day6.4.jpg","day6.5.jpg","day6.6.jpg","day6.7.jpg","day6.8.jpg","day6.9.jpg","day6.10.jpg","day6.11.jpg","day6.12.jpg","day6.13.jpg","day6.14.jpg","day6.15.jpg"]
+      },
+      {
+        id: 7, date: "2026.01.30", title: "星耀樟宜与返程", subtitle: "Day 7 / 离开与回家", location: "樟宜机场（Jewel 星耀樟宜）", coords: [1.3600, 103.9898],
+        icon: "fa-plane-departure", color: "#ef4444", bg: "bg-red-50", text: "text-red-500",
+        mood: "👋", quote: "珍藏这段记忆，开启新的生活。加油，做最好的自己。", keywords: [
+          "Jewel 星耀樟宜",
+          "Rain Vortex",
+          "Skytrain",
+          "伴手礼",
+          "行李托运",
+          "21:02高铁",
+          "20:50到达",
+          "有惊无险",
+          "再见新加坡"
+        ],
+                category: "attraction",
+        learning: [
+          "上午9:30从酒店出发前往樟宜机场（T3——>T5——>T3），打卡Jewel星耀樟宜与Rain Vortex雨漩涡瀑布，并乘坐Skytrain。",
+          "返程经历再次提醒我：时间节点、行李托运与交通衔接都需要更细致的预留。",
+          "告别时的情绪与回到祖国的踏实感交织——旅程结束，生活继续。"
+        ],
+        visit: [
+          {
+            name: "Jewel 星耀樟宜",
+            desc: "打卡Rain Vortex雨漩涡瀑布并购买伴手礼，感受樟宜机场如热带丛林般的设计。",
+            coords: [1.36, 103.9898],
+          }
+          ,          {
+            name: "Skytrain",
+            desc: "在机场内乘坐Skytrain免费小火车穿梭航站楼。",
+            coords: [1.359, 103.989],
+          }
+        ],
+        output: {
+          reflection: "把回忆带回家，就是最好的告别。再见，新加坡；下一次出发，希望自己更从容，也更坚定。",
+          picks: [0, 1],
+        },
+content: `
+          <p>2026年1月30日。DAY7：上午9:30从酒店出发前往樟宜机场，T3——>T5——>T3；打卡Jewel星耀樟宜-Rain Vortex雨漩涡瀑布，乘坐Skytrain免费小火车并购买伴手礼；乘坐飞机回家：新加坡樟宜机场——>西安咸阳机场——>西安北站——>郑州东站。2025年1月30日（周五）。马上就要回家了。早上我早早起床，9:30有一趟酒店班车送我们到机场。其实凌晨我还在收拾行李——带着这段回忆踏上归途，重回祖国的怀抱。行李箱里塞满伴手礼，心里装着满满回忆。刚到新加坡时已是夜晚，没有好好看看樟宜机场；这次终于能认真走一走。樟宜机场的设计非常好看，有一种沉浸在热带丛林中的感觉。说实话，有点不舍，但还是坐上了回国的航班。伴随着发动机的轰鸣声，飞机飞上万米高空，俯瞰自己曾停留过的地方，内心不禁一阵悸动：再见，Singapore；再见，新加坡。飞机降落咸阳机场时天已黑。由于行李托运，我的行李迟迟未出现在旋转皮带上，我开始有些慌：因为我订的是21:02的高铁，而此时已经20:10，我还在咸阳机场，行李还没有出来。等行李出来时已是20:15，我立刻赶往网约车上车点，上车后告诉司机高铁可能赶不上。司机师傅也很给力，20:50把我送到了车站。有惊无险，最终还是顺利赶上回郑州的高铁。到此结束，我的新加坡之旅也算完美收官。珍藏这段记忆，开启新的生活。加油，做最好的自己。</p>
+          <div class="bg-gradient-to-r from-red-50 to-rose-50 p-5 rounded-2xl border border-red-100 mt-6 text-center">
+            <h4 class="font-black text-red-600 text-lg mb-2 tracking-widest uppercase">再见，新加坡 ✈️</h4>
+            <p class="text-sm text-slate-700 mb-3">行李箱塞满了伴手礼，心里装满了回忆。旅程回到起点，也意味着下一段生活的开始。</p>
+            <div class="flex items-center justify-center gap-2 text-xs font-bold text-slate-500 bg-white inline-flex px-4 py-2 rounded-full shadow-sm">
+              <span>新加坡</span> <i class="fa-solid fa-arrow-right text-red-400 mx-1"></i> 
+              <span>西安</span> <i class="fa-solid fa-arrow-right text-red-400 mx-1"></i> 
+              <span>郑州</span>
+            </div>
+            <p class="text-sm font-bold text-red-500 mt-4">2026新加坡访学，圆满收官。</p>
+          </div>
+        `,
+        images: ["day7.1.jpg","day7.2.jpg","day7.3.jpg","day7.4.jpg","day7.5.mp4","day7.6.jpg","day7.7.jpg","day7.8.jpg","day7.9.jpg","day7.10.jpg","day7.11.jpg","day7.12.jpg","day7.13.jpg","day7.14.jpg","day7.15.jpg","day7.16.jpg","day7.17.jpg","day7.18.jpg","day7.19.mp4"]
+      }
+    ];
+
+    
+    // 术语解释（知识卡片）——仅用于展示说明，可自由扩展
+    const KNOWLEDGE_GLOSSARY = {
+      "VR（虚拟现实）": "课程1《虚拟现实与元宇宙》为期3小时，全英教学，我听得有些懵懂。",
+      "元宇宙（Metaverse）": "在课堂里，我更关注其背后的创新驱动、跨学科融合与产学研结合三条脉络。",
+      "人工智能（AI）": "课程2《人工智能》安排在14:00-17:00，为访学课程的一部分。",
+      "网络环境（外网）": "国内想访问部分国外网站或AI工具会很麻烦，短期难以改变，只能在规则内适应。",
+      "数字孪生（Digital Twin）": "课程3涉及现实计算、人机交互和数字孪生，但与我专业衔接不多，因此记录以感受为主。",
+      "新加坡城市重建局（URA）": "参观城市重建局，了解新加坡从相对落后发展至今；我当天兴趣一般。",
+      "结题汇报（小组）": "老师通知以小组为单位进行结题汇报；协调不当引发矛盾，也让我反思负责人应如何分工与调解。"
+    };
+
+    // 地点类型：用于“环形图”统计（可按需求调整）
+    const CATEGORY_LABEL = {
+      campus: "校园",
+      city: "城市",
+      attraction: "景点",
+      food: "餐饮"
+    };
+const MEDIA_TOTAL = tripData.reduce((acc, d) => acc + d.images.length, 0);
+
+    /********************
+     * 2) 状态管理 (包含本地存储记录)
+     ********************/
+    const state = {
+      map: null,
+      markers: [],
+      polyline: null,
+      
+      // 临时定位标记（点击“定位”按钮出现，可清除）
+      tempMarker: null,
+      tempMarkerKey: "",
+currentDayIndex: -1,
+      visitedDays: new Set(JSON.parse(localStorage.getItem('sg_visited')) || []),
+      
+      // 播放模式
+      isPlaying: false,
+      playTimer: null,
+
+      // 预览状态
+      mediaList: [],
+      previewIndex: 0,
+      zoom: 1,
+      isDragging: false,
+      startX: 0, currentX: 0
+    };
+
+    /********************
+     * 3) 通用工具与 Toast 系统
+     ********************/
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+
+    // 简单 HTML 转义（用于结构化模块，避免意外插入）
+    function escapeHtml(str = "") {
+      return String(str).replace(/[&<>"']/g, c => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[c]));
+    }
+
+    /**
+     * 纯 SVG：折线图（每天媒体数量）
+     * @param {number[]} values
+     * @param {string[]} labels
+     * @returns {string}
+     */
+    function buildLineChartSVG(values, labels) {
+      const W = 720, H = 180, P = 28;
+      const maxV = Math.max(1, ...values);
+      const stepX = (W - P * 2) / Math.max(1, values.length - 1);
+
+      const points = values.map((v, i) => {
+        const x = P + i * stepX;
+        const y = P + (1 - v / maxV) * (H - P * 2);
+        return { x, y, v, label: labels[i] || `D${i+1}` };
+      });
+
+      const poly = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+      const area = `${P},${H-P} ` + poly + ` ${W-P},${H-P}`;
+
+      const dots = points.map(p => `
+        <g>
+          <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5" fill="rgba(14,165,233,0.95)">
+            <title>${p.label}: ${p.v} 项媒体</title>
+          </circle>
+        </g>
+      `).join("");
+
+      const xLabels = points.map(p => `
+        <text x="${p.x.toFixed(1)}" y="${(H-10).toFixed(1)}" text-anchor="middle" font-size="11" fill="rgba(100,116,139,0.9)">
+          ${escapeHtml(p.label)}
+        </text>
+      `).join("");
+
+      return `
+        <svg role="img" aria-label="每天媒体数量折线图" viewBox="0 0 ${W} ${H}" class="w-full h-auto">
+          <title>每天媒体数量折线图</title>
+          <desc>折线展示每天照片与视频总量变化趋势</desc>
+
+          <defs>
+            <linearGradient id="lineArea" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(14,165,233,0.35)"/>
+              <stop offset="100%" stop-color="rgba(14,165,233,0.04)"/>
+            </linearGradient>
+          </defs>
+
+          <!-- grid -->
+          <g>
+            ${[0.25,0.5,0.75].map(t => {
+              const y = P + t*(H-P*2);
+              return `<line x1="${P}" y1="${y}" x2="${W-P}" y2="${y}" stroke="rgba(148,163,184,0.25)" stroke-width="1"/>`;
+            }).join("")}
+          </g>
+
+          <!-- area -->
+          <path d="M ${area}" fill="url(#lineArea)" stroke="none" />
+
+          <!-- line -->
+          <polyline points="${poly}" fill="none" stroke="rgba(14,165,233,0.95)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- dots -->
+          ${dots}
+
+          <!-- x labels -->
+          ${xLabels}
+        </svg>
+      `;
+    }
+
+    /**
+     * 纯 SVG：环形图（地点类型占比）
+     * @param {{key:string,label:string,value:number,color:string}[]} items
+     * @returns {{svg:string, legend:string}}
+     */
+    function buildDonutChartSVG(items) {
+      const total = items.reduce((a, b) => a + b.value, 0) || 1;
+      const W = 240, H = 240, cx = 120, cy = 120, r = 78;
+      const C = 2 * Math.PI * r;
+
+      let offset = 0;
+      const rings = items.map(it => {
+        const seg = (it.value / total) * C;
+        const el = `
+          <circle cx="${cx}" cy="${cy}" r="${r}"
+            fill="none"
+            stroke="${it.color}"
+            stroke-width="22"
+            stroke-linecap="round"
+            stroke-dasharray="${seg} ${C - seg}"
+            stroke-dashoffset="${-offset}"
+            opacity="0.95">
+            <title>${it.label}: ${it.value} 天（${Math.round((it.value/total)*100)}%）</title>
+          </circle>
+        `;
+        offset += seg + 2; // 留一点间隔
+        return el;
+      }).join("");
+
+      const legend = items.map(it => {
+        const pct = Math.round((it.value / total) * 100);
+        return `
+          <div class="flex items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 rounded-full" style="background:${it.color}"></span>
+              <span class="font-semibold text-slate-600">${escapeHtml(it.label)}</span>
+            </div>
+            <span class="font-bold text-slate-500">${it.value} 天 · ${pct}%</span>
+          </div>
+        `;
+      }).join("");
+
+      const svg = `
+        <svg role="img" aria-label="地点类型占比环形图" viewBox="0 0 ${W} ${H}" class="w-full h-auto">
+          <title>地点类型占比环形图</title>
+          <desc>统计每一天的主要地点类型：校园、城市、景点、餐饮</desc>
+
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(148,163,184,0.22)" stroke-width="22"/>
+          ${rings}
+          <text x="${cx}" y="${cy-2}" text-anchor="middle" font-size="13" fill="rgba(100,116,139,0.95)" font-weight="700">类型占比</text>
+          <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="18" fill="rgba(15,23,42,0.92)" font-weight="900">${total}</text>
+          <text x="${cx}" y="${cy+36}" text-anchor="middle" font-size="11" fill="rgba(100,116,139,0.85)" font-weight="600">天</text>
+        </svg>
+      `;
+
+      return { svg, legend };
+    }
+
+    /**
+     * 结构化模块：Learning / Visit / Output
+     * @param {any} day
+     * @returns {string}
+     */
+    function renderStructuredBlocks(day) {
+      const learning = Array.isArray(day.learning) ? day.learning : [];
+      const visit = Array.isArray(day.visit) ? day.visit : [];
+      const output = day.output || null;
+
+      const learningHtml = learning.length ? `
+        <article class="bg-white/70 border border-slate-100 rounded-3xl p-6 shadow-sm">
+          <header class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-sky-50 grid place-items-center border border-sky-100">
+              <i class="fa-solid fa-book-open text-sky-500"></i>
+            </span>
+            <h3 class="text-sm font-black text-slate-800 tracking-wider uppercase">Learning · 课程要点</h3>
+          </header>
+          <ul class="text-sm text-slate-600 leading-relaxed space-y-2">
+            ${learning.map(it => `
+              <li class="flex items-start gap-2">
+                <i class="fa-solid fa-check text-emerald-500 mt-[3px]"></i>
+                <span>${escapeHtml(it)}</span>
+              </li>
+            `).join("")}
+          </ul>
+        </article>
+      ` : "";
+
+      const visitHtml = visit.length ? `
+        <article class="bg-white/70 border border-slate-100 rounded-3xl p-6 shadow-sm">
+          <header class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-violet-50 grid place-items-center border border-violet-100">
+              <i class="fa-solid fa-location-crosshairs text-violet-500"></i>
+            </span>
+            <h3 class="text-sm font-black text-slate-800 tracking-wider uppercase">Visit · 参访与地点</h3>
+          </header>
+
+          <ul class="space-y-3">
+            ${visit.map((v, idx) => {
+              const lat = Array.isArray(v.coords) ? v.coords[0] : null;
+              const lng = Array.isArray(v.coords) ? v.coords[1] : null;
+              const flyAttr = (lat != null && lng != null) ? `data-flyto="${lat},${lng}"` : "";
+              return `
+                <li class="bg-slate-50/60 border border-slate-100 rounded-2xl p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <p class="text-sm font-extrabold text-slate-800 truncate">${escapeHtml(v.name || `地点 ${idx+1}`)}</p>
+                      <p class="text-xs text-slate-500 mt-1 leading-relaxed">${escapeHtml(v.desc || "")}</p>
+                    </div>
+                    <button class="btn-locate shrink-0 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-sky-600 hover:border-sky-200 transition-colors text-xs font-bold"
+                      ${flyAttr}
+                      data-place-name="${escapeHtml(v.name || `地点 ${idx+1}`)}"
+                      aria-label="在地图定位 ${escapeHtml(v.name || '')}">
+                      <i class="fa-solid fa-crosshairs mr-1"></i> 定位
+                    </button>
+                  </div>
+                </li>
+              `;
+            }).join("")}
+          </ul>
+        </article>
+      ` : "";
+
+      const picks = (output && Array.isArray(output.picks)) ? output.picks : [];
+      const pickFiles = picks
+        .map(i => (Array.isArray(day.images) ? day.images[i] : null))
+        .filter(f => typeof f === "string" && !f.toLowerCase().endsWith(".mp4"))
+        .slice(0, 3);
+
+      const outputHtml = output ? `
+        <article class="bg-white/70 border border-slate-100 rounded-3xl p-6 shadow-sm">
+          <header class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-amber-50 grid place-items-center border border-amber-100">
+              <i class="fa-solid fa-lightbulb text-amber-500"></i>
+            </span>
+            <h3 class="text-sm font-black text-slate-800 tracking-wider uppercase">Output · 成果与收获</h3>
+          </header>
+
+          <p class="text-sm text-slate-600 leading-relaxed">${escapeHtml(output.reflection || "")}</p>
+
+          ${pickFiles.length ? `
+            <div class="mt-4">
+              <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">今日精选</p>
+              <div class="grid grid-cols-3 gap-2">
+                ${pickFiles.map((file, i) => `
+                  <button class="rounded-xl overflow-hidden border border-slate-200 bg-slate-100 focus-visible:ring-2 focus-visible:ring-sky-300" data-media-open="${day.images.indexOf(file)}" aria-label="打开精选图片 ${i+1}">
+                    <img src="${file}" alt="精选图片 ${i+1}" loading="lazy" class="w-full h-20 object-cover" />
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          ` : ""}
+        </article>
+      ` : "";
+
+      return `
+        <section class="mt-10 grid grid-cols-1 gap-4" aria-label="访学结构化信息">
+          ${learningHtml}
+          ${visitHtml}
+          ${outputHtml}
+        </section>
+      `;
+    }
+
+    /**
+     * 知识卡片模块（仅 Day 2/3/4/5 等学习密集日显示）
+     * @param {any} day
+     * @returns {string}
+     */
+    function renderKnowledgeBlocks(day) {
+      const know = day.knowledge;
+      if (!know) return "";
+      const terms = Array.isArray(know.terms) ? know.terms : [];
+      const learned = Array.isArray(know.learned) ? know.learned : [];
+      const explore = Array.isArray(know.explore) ? know.explore : [];
+
+      if (!terms.length && !learned.length && !explore.length) return "";
+
+      const termCards = terms.map(t => {
+        const desc = KNOWLEDGE_GLOSSARY[t] || "（可在 KNOWLEDGE_GLOSSARY 中补充该术语说明）";
+        return `
+          <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
+            <p class="text-sm font-black text-slate-800">${escapeHtml(t)}</p>
+            <p class="text-xs text-slate-500 mt-2 leading-relaxed">${escapeHtml(desc)}</p>
+          </div>
+        `;
+      }).join("");
+
+      const learnedHtml = learned.length ? `
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">我学到的 3 件事</p>
+          <ol class="space-y-2 text-sm text-slate-600 leading-relaxed">
+            ${learned.slice(0,3).map((t,i)=>`
+              <li class="flex items-start gap-2">
+                <span class="mt-[2px] w-5 h-5 rounded-full bg-sky-50 border border-sky-100 text-sky-600 text-[11px] font-black grid place-items-center">${i+1}</span>
+                <span>${escapeHtml(t)}</span>
+              </li>
+            `).join("")}
+          </ol>
+        </div>
+      ` : "";
+
+      const exploreHtml = explore.length ? `
+        <div class="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+          <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">还想进一步探索</p>
+          <ul class="space-y-2">
+            ${explore.map(l => `
+              <li>
+                <a class="text-sm font-bold text-sky-600 hover:text-sky-700 underline decoration-sky-200 underline-offset-4"
+                  href="${escapeHtml(l.url)}" target="_blank" rel="noopener">
+                  <i class="fa-solid fa-arrow-up-right-from-square mr-2"></i>${escapeHtml(l.label)}
+                </a>
+              </li>
+            `).join("")}
+          </ul>
+        </div>
+      ` : "";
+
+      return `
+        <section class="mt-6" aria-label="知识卡片">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-8 h-8 rounded-xl bg-slate-50 grid place-items-center border border-slate-200">
+              <i class="fa-solid fa-graduation-cap text-slate-600"></i>
+            </span>
+            <h3 class="text-sm font-black text-slate-800 tracking-wider uppercase">Knowledge · 知识卡片</h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${termCards}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            ${learnedHtml}
+            ${exploreHtml}
+          </div>
+        </section>
+      `;
+    }
+
+
+    // 全局提示框
+    function showToast(msg, type = 'info') {
+      const container = $('#toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      const icon = type === 'success' ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-circle-info"></i>';
+      toast.innerHTML = `${icon} <span>${msg}</span>`;
+      
+      container.appendChild(toast);
+      
+      // 触发动画
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => toast.classList.add('show'));
+      });
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // 更新侧边栏进度
+    function updateProgress() {
+      const total = tripData.length;
+      const visited = state.visitedDays.size;
+      $('#progress-text').innerText = `${visited}/${total}`;
+      $('#progress-bar-nav').style.width = `${(visited/total)*100}%`;
+    }
+
+    function markDayVisited(index) {
+      state.visitedDays.add(index);
+      localStorage.setItem('sg_visited', JSON.stringify([...state.visitedDays]));
+      $(`#nav-item-${index}`).classList.add('visited');
+      updateProgress();
+    }
+
+    window.clearHistory = function() {
+      if(confirm("确定要清除浏览记录吗？（将重新开始计数）")) {
+        state.visitedDays.clear();
+        localStorage.removeItem('sg_visited');
+        $$('.nav-item').forEach(el => el.classList.remove('visited'));
+        updateProgress();
+        showToast('浏览记录已清空', 'success');
+      }
+    };
+
+    /********************
+     * 4) 模板渲染 (DOMPurify 防护)
+     ********************/
+    function renderNav() {
+      const html = tripData.map((day, i) => {
+        const isVisited = state.visitedDays.has(i) ? 'visited' : '';
+        return `
+          <button class="nav-item ${isVisited} w-full text-left p-3 md:p-4 rounded-2xl flex items-center gap-4 group cursor-pointer focus-visible:ring-2 focus-visible:ring-sky-300"
+            data-index="${i}" id="nav-item-${i}" tabindex="0" aria-label="查看第 ${i+1} 天：${day.title}">
+            <div class="nav-icon-wrap w-12 h-12 rounded-2xl ${day.bg} grid place-items-center shrink-0 transition-transform group-hover:scale-105 shadow-sm border border-white">
+              <i class="fa-solid ${day.icon} text-lg ${day.text}"></i>
+            </div>
+            <div class="hidden md:block flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h3 class="nav-title text-sm font-black text-slate-800 truncate">${day.title}</h3>
+                <i class="fa-solid fa-check text-[10px] text-green-500 opacity-0 transition-opacity ${isVisited ? '!opacity-100' : ''}"></i>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5 truncate font-medium">${day.subtitle}</p>
+            </div>
+          </button>
+        `;
+      }).join('');
+      $('#nav-list').innerHTML = html;
+      updateProgress();
+
+      // 事件委托
+      $('#nav-list').addEventListener('click', e => {
+        const btn = e.target.closest('.nav-item');
+        if (btn) selectDay(Number(btn.dataset.index));
+      });
+      // 键盘导航
+      $('#nav-list').addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const btn = e.target.closest('.nav-item');
+          if (btn) selectDay(Number(btn.dataset.index));
+        }
+      });
+    }
+
+    // 渲染总览页面 (Overview)
+    window.showOverview = function() {
+      closePanel();
+      stopPlay();
+      $$('.nav-item').forEach(el => el.classList.remove('active'));
+      
+      const panel = $('#detail-panel');
+      const content = $('#panel-content');
+      // 数据可视化（纯 SVG）：折线图（每天媒体数量） + 环形图（地点类型占比）
+      const mediaCounts = tripData.map(d => (d.images?.length || 0));
+      const lineSvg = buildLineChartSVG(mediaCounts, tripData.map((_, i) => `D${i+1}`));
+
+      const typeCounts = tripData.reduce((acc, d) => {
+        const k = d.category || "city";
+        acc[k] = (acc[k] || 0) + 1;
+        return acc;
+      }, {});
+
+      const donutItems = [
+        { key: "campus", label: CATEGORY_LABEL.campus, value: typeCounts.campus || 0, color: "#0ea5e9" },
+        { key: "city", label: CATEGORY_LABEL.city, value: typeCounts.city || 0, color: "#8b5cf6" },
+        { key: "attraction", label: CATEGORY_LABEL.attraction, value: typeCounts.attraction || 0, color: "#10b981" },
+        { key: "food", label: CATEGORY_LABEL.food, value: typeCounts.food || 0, color: "#f97316" },
+      ].filter(x => x.value > 0);
+
+      const donut = buildDonutChartSVG(donutItems);
+
+      const allKeywords = [...new Set(tripData.flatMap(d => d.keywords))].slice(0, 15);
+
+      content.innerHTML = `
+        <div class="p-8 md:p-12">
+          <div class="inline-block px-3 py-1 bg-sky-100 text-sky-600 rounded-full text-xs font-bold tracking-widest uppercase mb-6">Trip Overview</div>
+          <h2 class="text-4xl font-black text-slate-800 mb-2">行程总览</h2>
+          <p class="text-slate-500 mb-10 leading-relaxed">一次新加坡7天访学的记录与回顾。</p>
+
+          <div class="grid grid-cols-2 gap-4 mb-10">
+            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+              <i class="fa-solid fa-calendar-days text-3xl text-sky-300 mb-4 block"></i>
+              <div class="text-3xl font-black text-slate-800">7<span class="text-sm font-medium text-slate-500 ml-1">天</span></div>
+              <div class="text-xs text-slate-400 font-bold mt-1">深度体验</div>
+            </div>
+            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
+              <i class="fa-solid fa-camera-retro text-3xl text-pink-300 mb-4 block"></i>
+              <div class="text-3xl font-black text-slate-800">${MEDIA_TOTAL}<span class="text-sm font-medium text-slate-500 ml-1">项</span></div>
+              <div class="text-xs text-slate-400 font-bold mt-1">影像记录</div>
+            </div>
+          </div>
+
+          <h3 class="text-sm font-black text-slate-800 mb-4 uppercase tracking-wider">数据可视化</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <section class="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm" aria-label="每天媒体数量折线图">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-black text-slate-500 uppercase tracking-widest">每天媒体数量</p>
+                <p class="text-[11px] font-bold text-slate-400">照片 + 视频</p>
+              </div>
+              <div class="rounded-2xl bg-slate-50/70 border border-slate-100 p-3">
+                ${lineSvg}
+              </div>
+              <p class="sr-only">
+                ${tripData.map((d,i)=>`第${i+1}天 ${d.images.length}项`).join('，')}
+              </p>
+            </section>
+
+            <section class="bg-white border border-slate-100 p-6 rounded-3xl shadow-sm" aria-label="地点类型占比环形图">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-black text-slate-500 uppercase tracking-widest">地点类型占比</p>
+                <p class="text-[11px] font-bold text-slate-400">按天统计</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                <div class="max-w-[260px] mx-auto">
+                  ${donut.svg}
+                </div>
+                <div class="space-y-2">
+                  ${donut.legend}
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <h3 class="text-sm font-black text-slate-800 mb-4 uppercase tracking-wider">旅程印记</h3>
+          <div class="flex flex-wrap gap-2">
+            ${allKeywords.map(k => `<span class="px-3 py-1.5 bg-slate-100 text-slate-600 text-xs font-medium rounded-lg">${k}</span>`).join('')}
+          </div>
+        </div>
+      `;
+
+      panel.classList.remove("translate-x-full");
+      if(state.map) state.map.flyTo([1.3521, 103.8198], 11, { animate: true, duration: 1 });
+    }
+
+    // 渲染每一天的详情
+    function renderDayDetail(day) {
+      const contentSafe = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(day.content) : day.content;
+      
+      let mediaHtml = '';
+      if(day.images.length > 0) {
+        mediaHtml = `
+          <div class="border-t border-slate-100 pt-8 mt-10">
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest"><i class="fa-solid fa-images text-slate-300 mr-2"></i>影像记忆 (${day.images.length})</h3>
+              <div class="flex bg-slate-100 rounded-lg p-1" role="group">
+                <button onclick="toggleView('masonry')" id="view-masonry-btn" class="px-3 py-1.5 rounded-md text-xs font-bold bg-white shadow-sm text-slate-700 transition-all"><i class="fa-solid fa-border-all mr-1"></i>网格</button>
+                <button onclick="toggleView('timeline')" id="view-timeline-btn" class="px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all"><i class="fa-solid fa-list mr-1"></i>列表</button>
+              </div>
+            </div>
+            <div id="media-container" class="view-masonry transition-all">
+              ${day.images.map((file, idx) => generateMediaItem(file, idx, day.title)).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      $('#panel-content').innerHTML = `
+        <div class="panel-sticky px-8 pt-8 pb-4">
+          <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${day.text} mb-3">
+            <span class="${day.bg} px-3 py-1.5 rounded-md">${day.date}</span>
+            <span class="text-slate-300 mx-1">/</span>
+            <span>Day ${day.id}</span>
+          </div>
+          <h2 class="text-3xl font-black text-slate-900 leading-tight mb-1">${day.title}</h2>
+          <p class="text-sm font-medium text-slate-500 flex items-center gap-2">
+            <i class="fa-solid fa-location-dot text-slate-300"></i> ${day.location}
+          </p>
+        </div>
+        
+        <div class="px-8 pb-12 pt-4">
+          <!-- 情绪模块 -->
+          <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 flex gap-4 items-start shadow-sm">
+            <div class="text-4xl mt-1">${day.mood}</div>
+            <div>
+              <p class="text-sm text-slate-700 font-medium italic leading-relaxed">"${day.quote}"</p>
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                ${day.keywords.map(k => `<span class="text-[10px] bg-white border border-slate-200 text-slate-500 px-2 py-1 rounded shadow-sm">${k}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+
+          <div class="prose prose-slate prose-sm md:prose-base max-w-none prose-headings:font-black prose-p:leading-relaxed prose-a:text-sky-500">
+            ${contentSafe}
+          </div>
+
+          ${renderStructuredBlocks(day)}
+          ${renderKnowledgeBlocks(day)}
+
+          ${mediaHtml}
+        </div>
+      `;
+
+      // 绑定打开预览事件（媒体卡片）
+      $$('.gallery-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // 视频原生控件点击不触发预览
+          if (e.target && (e.target.tagName === 'VIDEO' || e.target.closest('video'))) return;
+          openPreview(day.images, Number(item.dataset.index));
+        });
+      });
+
+      // 结构化模块：Visit 定位按钮（地图飞行）
+      $$('[data-flyto]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const raw = btn.getAttribute('data-flyto') || '';
+          const [lat, lng] = raw.split(',').map(Number);
+          if (!state.map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+          state.map.flyTo([lat, lng], 15, { animate: true, duration: 1.05 });
+
+          // 创建/刷新临时定位标记（不影响行程永久标记）
+          const placeName = btn.getAttribute('data-place-name') || '目标地点';
+          showTempMarker({ lat, lng, name: placeName });
+
+          showToast('已为你定位到地图', 'info');
+        });
+      });
+
+      // Output 精选缩略图：直接打开预览
+      $$('[data-media-open]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = Number(btn.getAttribute('data-media-open'));
+          if (!Number.isFinite(idx)) return;
+          openPreview(day.images, idx);
+        });
+      });
+}
+
+    // 生成单个媒体项 (带加载骨架)
+    function generateMediaItem(file, idx, title) {
+      const isVideo = file.toLowerCase().endsWith('.mp4');
+      if (isVideo) {
+        return `
+          <div class="gallery-item group bg-slate-900" data-index="${idx}">
+            <div class="absolute inset-0 grid place-items-center z-10 pointer-events-none text-white/80 group-hover:text-white transition-colors">
+              <i class="fa-solid fa-circle-play text-4xl drop-shadow-lg"></i>
+            </div>
+            <video src="${file}" class="w-full h-auto rounded-xl opacity-80 group-hover:opacity-100 transition-opacity" preload="metadata"></video>
+            <div class="meta-info">
+              <span class="font-bold text-slate-800 block mb-1">视频记录</span>
+              <span>拍摄于 ${title}</span>
+            </div>
+          </div>
+        `;
+      }
+      return `
+        <div class="gallery-item group img-skeleton bg-slate-100" data-index="${idx}">
+          <img src="${file}" alt="${title} 照片 ${idx+1}" loading="lazy" 
+               class="lazy-img w-full h-auto object-cover rounded-xl"
+               onload="this.classList.add('loaded'); this.parentElement.classList.remove('img-skeleton')"
+               onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23f1f5f9\\'/><text x=\\'50\\' y=\\'50\\' font-family=\\'Arial\\' font-size=\\'12\\' fill=\\'%2394a3b8\\' text-anchor=\\'middle\\' dy=\\'4\\'>图片遗失</text></svg>'; this.classList.add('loaded'); this.parentElement.classList.remove('img-skeleton')"/>
+          <div class="meta-info">
+            <span class="font-bold text-slate-800 block mb-1">照片记忆 ${idx+1}</span>
+            <span>精彩瞬间，留作回味</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 视图切换
+    window.toggleView = function(type) {
+      const container = $('#media-container');
+      if(!container) return;
+      
+      const btnMasonry = $('#view-masonry-btn');
+      const btnTimeline = $('#view-timeline-btn');
+      
+      if(type === 'masonry') {
+        container.className = 'view-masonry transition-all duration-300';
+        btnMasonry.className = 'px-3 py-1.5 rounded-md text-xs font-bold bg-white shadow-sm text-slate-700 transition-all';
+        btnTimeline.className = 'px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all';
+      } else {
+        container.className = 'view-timeline transition-all duration-300';
+        btnTimeline.className = 'px-3 py-1.5 rounded-md text-xs font-bold bg-white shadow-sm text-slate-700 transition-all';
+        btnMasonry.className = 'px-3 py-1.5 rounded-md text-xs font-bold text-slate-500 hover:text-slate-700 transition-all';
+      }
+    }
+
+    /********************
+     * 5) 地图与交互核心
+     ********************/
+    function initMap() {
+      if (typeof L === "undefined") {
+        setTimeout(initMap, 100);
+        return;
+      }
+
+      state.map = L.map('map', {
+        zoomControl: false,
+        attributionControl: false, // 简化UI
+        maxZoom: 18, minZoom: 10
+      }).setView([1.3521, 103.8198], 11);
+
+      L.control.zoom({ position: "bottomright" }).addTo(state.map);
+
+      // 使用更柔和的 CartoDB 底图
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd", maxZoom: 18
+      }).addTo(state.map);
+
+      // 绘制虚线轨迹
+      const latlngs = tripData.map(d => d.coords);
+      state.polyline = L.polyline(latlngs, {
+        color: '#0ea5e9', weight: 3, dashArray: '8, 8', opacity: 0.6, className: 'route-line'
+      }).addTo(state.map);
+
+      // 生成 Markers
+      tripData.forEach((day, i) => {
+        const icon = L.divIcon({
+          className: "custom-marker",
+          html: `<div class="marker-dot" style="background:${day.color}; border-color:#fff"></div>`,
+          iconSize: [18,18], iconAnchor: [9,9]
+        });
+
+        const marker = L.marker(day.coords, { icon, zIndexOffset: 100 }).addTo(state.map);
+        marker.bindPopup(`
+          <div class="text-center p-1">
+            <div class="text-xs font-bold mb-1" style="color:${day.color}">${day.title}</div>
+            <div class="text-[10px] text-slate-500">${day.date}</div>
+          </div>
+        `, { closeButton: false, offset: [0, -5] });
+
+        marker.on("click", () => selectDay(i));
+        marker.on("mouseover", () => marker.openPopup());
+        marker.on("mouseout", () => { if(state.currentDayIndex !== i) marker.closePopup(); });
+        
+        state.markers.push(marker);
+      });
+
+      // 初始化地图控制按钮
+      $('#btn-reset-view').addEventListener('click', () => {
+        state.map.flyTo([1.3521, 103.8198], 11, { animate: true, duration: 1 });
+        closePanel();
+        stopPlay();
+      });
+
+      $('#btn-toggle-route').addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        if(state.map.hasLayer(state.polyline)) {
+          state.map.removeLayer(state.polyline);
+          btn.classList.remove('active');
+          showToast('路线已收起');
+        } else {
+          state.map.addLayer(state.polyline);
+          btn.classList.add('active');
+          showToast('路线已展开');
+        }
+      });
+
+      // 清除临时定位标记
+      const btnClearTemp = $('#btn-clear-temp-marker');
+      if (btnClearTemp) {
+        btnClearTemp.addEventListener('click', () => clearTempMarker(false));
+      }
+
+      $('#btn-play').addEventListener('click', togglePlay);
+
+      // 隐藏加载页
+      setTimeout(() => {
+        const loader = $('#page-loader');
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+        showOverview(); // 默认显示总览
+      }, 1000);
+    }
+
+    
+    /********************
+     * 5.1) 临时定位标记（点击 Visit 的“定位”按钮时出现）
+     * 规则：
+     * - 仅点击后显示；刷新页面自动消失
+     * - 点击“清除临时标记”按钮可删除
+     * - 重复点击同一定位按钮：不重复创建，只刷新显示状态
+     ********************/
+    function getTempMarkerKey(lat, lng, name) {
+      const a = Number(lat).toFixed(6);
+      const b = Number(lng).toFixed(6);
+      return `${a},${b}|${String(name || '')}`;
+    }
+
+    function flashTempMarker() {
+      const el = state.tempMarker?.getElement?.();
+      if (!el) return;
+      el.classList.remove('temp-marker-flash');
+      // 强制重排以重启动画
+      void el.offsetWidth;
+      el.classList.add('temp-marker-flash');
+      setTimeout(() => el.classList.remove('temp-marker-flash'), 700);
+    }
+
+    function clearTempMarker(silent = false) {
+      try {
+        if (state.tempMarker && state.map && state.map.hasLayer(state.tempMarker)) {
+          state.map.removeLayer(state.tempMarker);
+        }
+      } catch (err) {
+        console.warn('clearTempMarker failed', err);
+      } finally {
+        state.tempMarker = null;
+        state.tempMarkerKey = "";
+        if (!silent) showToast('已清除临时标记', 'success');
+      }
+    }
+
+    function showTempMarker({ lat, lng, name }) {
+      if (!state.map || typeof L === "undefined") {
+        showToast('地图尚未就绪，稍后再试', 'info');
+        return;
+      }
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      const safeName = String(name || '目标地点');
+      const key = getTempMarkerKey(lat, lng, safeName);
+
+      // 同一个地点：不重复创建，只刷新显示
+      if (state.tempMarker && state.tempMarkerKey === key) {
+        try {
+          if (!state.map.hasLayer(state.tempMarker)) state.tempMarker.addTo(state.map);
+          state.tempMarker.openTooltip?.();
+          flashTempMarker();
+        } catch (err) {
+          console.warn('refresh temp marker failed', err);
+        }
+        return;
+      }
+
+      // 不同地点：替换旧标记
+      clearTempMarker(true);
+
+      const icon = L.divIcon({
+        className: "temp-marker-wrapper",
+        html: '<div class="temp-marker-icon"><span class="temp-marker-dot"></span></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+      });
+
+      const marker = L.marker([lat, lng], {
+        icon,
+        zIndexOffset: 3000,
+        keyboard: false,
+        interactive: false, // 临时标记不抢占点击
+      }).addTo(state.map);
+
+      marker.bindTooltip(escapeHtml(safeName), {
+        permanent: true,
+        direction: "top",
+        offset: [0, -16],
+        className: "temp-marker-label",
+        opacity: 0.98,
+      });
+
+      marker.openTooltip();
+
+      state.tempMarker = marker;
+      state.tempMarkerKey = key;
+
+      flashTempMarker();
+    }
+
+
+    // 选择天数
+    function selectDay(index) {
+      const day = tripData[index];
+      if (!day) return;
+
+      state.currentDayIndex = index;
+      markDayVisited(index);
+
+      // UI 状态更新
+      $$('.nav-item').forEach(el => el.classList.remove('active'));
+      $(`#nav-item-${index}`).classList.add('active');
+
+      // 面板渲染
+      renderDayDetail(day);
+      $('#detail-panel').classList.remove('translate-x-full');
+
+      // 地图飞行与标记激活
+      state.map.flyTo(day.coords, 14, { animate: true, duration: 1.2 });
+      
+      state.markers.forEach((m, i) => {
+        const el = m.getElement();
+        if(el) {
+          if (i === index) {
+            el.classList.add('marker-selected');
+            m.openPopup();
+            m.setZIndexOffset(1000); // 选中的置顶
+          } else {
+            el.classList.remove('marker-selected');
+            m.closePopup();
+            m.setZIndexOffset(100);
+          }
+        }
+      });
+    }
+
+    function closePanel() {
+      $('#detail-panel').classList.add('translate-x-full');
+      $$('.nav-item').forEach(el => el.classList.remove('active'));
+      state.currentDayIndex = -1;
+      
+      // 取消高亮，但不强制飞回全景（优化点 8）
+      state.markers.forEach(m => {
+        m.closePopup();
+        if(m.getElement()) m.getElement().classList.remove('marker-selected');
+      });
+    }
+
+    // 播放逻辑
+    function togglePlay() {
+      const btn = $('#btn-play');
+      if (state.isPlaying) {
+        stopPlay();
+      } else {
+        state.isPlaying = true;
+        btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+        btn.classList.add('active', 'bg-red-500', 'border-red-500');
+        showToast('自动播放已启动', 'success');
+        
+        let nextIdx = state.currentDayIndex < tripData.length - 1 ? state.currentDayIndex + 1 : 0;
+        selectDay(nextIdx);
+        
+        state.playTimer = setInterval(() => {
+          nextIdx = state.currentDayIndex < tripData.length - 1 ? state.currentDayIndex + 1 : 0;
+          if(nextIdx === 0) {
+            stopPlay();
+            showOverview();
+            showToast('旅程回放完毕');
+          } else {
+            selectDay(nextIdx);
+          }
+        }, 6000); // 每6秒切换
+      }
+    }
+    function stopPlay() {
+      state.isPlaying = false;
+      clearInterval(state.playTimer);
+      const btn = $('#btn-play');
+      btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+      btn.classList.remove('active', 'bg-red-500', 'border-red-500');
+    }
+
+    
+    /********************
+     * 6) 全屏媒体预览（修复：完整显示 + 可缩放/拖拽/双击/捏合）
+     * - 完整显示：用 max-height:86vh + object-fit:contain 保证初始完整可见
+     * - 缩放：双击/双击触控切换 1x ↔ 2x；滚轮缩放（桌面）；双指捏合（移动端）
+     * - 拖拽：缩放后可拖拽查看细节；未缩放时左右拖拽切换媒体
+     ********************/
+    const domPreview = $('#media-preview');
+    const domSlider = $('#preview-slider');
+    const domCounter = $('#preview-counter');
+
+    const previewState = {
+      scale: 1,
+      tx: 0,
+      ty: 0,
+
+      // gesture
+      pointers: new Map(), // pointerId -> {x,y}
+      startScale: 1,
+      startDist: 0,
+
+      // swipe / pan
+      mode: 'idle', // idle | swipe | pan | pinch
+      startX: 0,
+      startY: 0,
+      startTx: 0,
+      startTy: 0,
+      swipeBaseX: 0,
+      swipeDx: 0,
+
+      // tap
+      lastTapAt: 0,
+    };
+
+    function getViewportWidth() {
+      return domPreview?.clientWidth || window.innerWidth || 1;
+    }
+
+    function getCurrentMediaEl() {
+      const item = domSlider?.children?.[state.previewIndex];
+      return item ? item.querySelector('.preview-content') : null;
+    }
+
+    function clampPan() {
+      if (previewState.scale <= 1.001) {
+        previewState.tx = 0;
+        previewState.ty = 0;
+        return;
+      }
+      const w = domPreview.clientWidth;
+      const h = domPreview.clientHeight;
+      // 经验夹逼：保证不会拖出“太空”，且计算成本低
+      const maxTx = (previewState.scale - 1) * w * 0.5;
+      const maxTy = (previewState.scale - 1) * h * 0.5;
+      previewState.tx = Math.max(-maxTx, Math.min(maxTx, previewState.tx));
+      previewState.ty = Math.max(-maxTy, Math.min(maxTy, previewState.ty));
+    }
+
+    function applyTransform() {
+      const el = getCurrentMediaEl();
+      if (!el || el.tagName === 'VIDEO') return;
+
+      clampPan();
+      el.style.transform = `translate3d(${previewState.tx}px, ${previewState.ty}px, 0) scale(${previewState.scale})`;
+      if (previewState.scale > 1.01) el.classList.add('is-zoomed');
+      else el.classList.remove('is-zoomed');
+    }
+
+    function resetZoom() {
+      previewState.scale = 1;
+      previewState.tx = 0;
+      previewState.ty = 0;
+      const el = getCurrentMediaEl();
+      if (el && el.tagName !== 'VIDEO') {
+        el.style.transform = '';
+        el.classList.remove('is-zoomed');
+      }
+    }
+
+    function setZoom(nextScale, anchorClientX = null, anchorClientY = null) {
+      const el = getCurrentMediaEl();
+      if (!el || el.tagName === 'VIDEO') return;
+
+      const prevScale = previewState.scale;
+      const clamped = Math.max(1, Math.min(4, nextScale));
+      previewState.scale = clamped;
+
+      // 以光标/触点为锚点缩放（避免“跳”）
+      if (anchorClientX != null && anchorClientY != null) {
+        const rect = el.getBoundingClientRect();
+        const ax = anchorClientX - (rect.left + rect.width / 2);
+        const ay = anchorClientY - (rect.top + rect.height / 2);
+        const k = (clamped / prevScale) - 1;
+        previewState.tx -= ax * k;
+        previewState.ty -= ay * k;
+      }
+
+      applyTransform();
+    }
+
+    function updatePreviewView(shouldResetZoom = true) {
+      const w = getViewportWidth();
+      domSlider.style.transform = `translate3d(${-state.previewIndex * w}px, 0, 0)`;
+      domCounter.innerText = `${state.previewIndex + 1} / ${state.mediaList.length}`;
+
+      // 切换媒体时：暂停非当前视频、重置图片缩放（避免“只看到上半部分”）
+      $$('video', domSlider).forEach((v, i) => { if (i !== state.previewIndex) v.pause(); });
+      if (shouldResetZoom) resetZoom();
+    }
+
+    function changePreview(dir) {
+      // 缩放状态下优先退出缩放（防止误切换）
+      if (previewState.scale > 1.01) {
+        resetZoom();
+        showToast('已退出缩放，继续滑动可切换', 'info');
+        return;
+      }
+      state.previewIndex += dir;
+      if (state.previewIndex < 0) state.previewIndex = 0;
+      if (state.previewIndex >= state.mediaList.length) state.previewIndex = state.mediaList.length - 1;
+      updatePreviewView(true);
+    }
+
+    function openPreview(list, index) {
+      state.mediaList = list;
+      state.previewIndex = index;
+
+      domSlider.innerHTML = list.map((file, i) => {
+        const safeName = String(file).replace(/"/g, '&quot;');
+        if (file.toLowerCase().endsWith('.mp4')) {
+          return `
+            <div class="preview-item">
+              <video src="${safeName}" controls class="preview-content shadow-2xl rounded-xl max-h-[85vh]" preload="metadata"></video>
+            </div>`;
+        }
+        return `
+          <div class="preview-item">
+            <img src="${safeName}" class="preview-content shadow-2xl rounded-sm" alt="预览图片 ${i + 1}" draggable="false" />
+          </div>`;
+      }).join('');
+
+      domPreview.classList.add('active');
+      domSlider.classList.remove('is-dragging');
+      resetZoom();
+      updatePreviewView(false);
+
+      // 首次打开提示
+      if (!localStorage.getItem('sg_preview_hint')) {
+        const hint = $('#preview-hint');
+        if (hint) {
+          hint.style.opacity = '1';
+          setTimeout(() => hint.style.opacity = '0', 3000);
+        }
+        localStorage.setItem('sg_preview_hint', '1');
+      }
+      // 背景点击关闭：点击遮罩层空白处关闭（媒体/按钮不触发）
+    }
+
+    function closePreview() {
+      domPreview.classList.remove('active');
+      resetZoom();
+      $$('video', domSlider).forEach(v => v.pause());
+      setTimeout(() => { domSlider.innerHTML = ''; }, 260);
+    }
+
+    // 预览事件绑定
+    $('#btn-close-preview').addEventListener('click', closePreview);
+    $('#prev-btn').addEventListener('click', () => changePreview(-1));
+    $('#next-btn').addEventListener('click', () => changePreview(1));
+
+    // 背景点击关闭：点击遮罩层空白处关闭（媒体/按钮不触发）
+    domPreview.addEventListener('click', (e) => {
+      if (!domPreview.classList.contains('active')) return;
+      const hitMedia = e.target.closest('.preview-content');
+      const hitBtn = e.target.closest('button');
+      if (!hitMedia && !hitBtn) closePreview();
+    });
+
+
+    // 复制媒体名功能
+    $('#btn-copy-name').addEventListener('click', () => {
+      const currentMedia = state.mediaList[state.previewIndex];
+      navigator.clipboard.writeText(currentMedia).then(() => {
+        showToast(`已复制文件名: ${currentMedia}`, 'success');
+      }).catch(() => showToast('复制失败，请检查浏览器权限设置', 'info'));
+    });
+
+    // 双击/双击触控：1x ↔ 2x
+    function toggleZoomAt(clientX, clientY) {
+      const el = getCurrentMediaEl();
+      if (!el || el.tagName === 'VIDEO') return;
+
+      if (previewState.scale > 1.01) {
+        resetZoom();
+        return;
+      }
+      previewState.tx = 0;
+      previewState.ty = 0;
+      setZoom(2, clientX, clientY);
+    }
+
+    // 滚轮缩放（桌面）
+    domPreview.addEventListener('wheel', (e) => {
+      if (!domPreview.classList.contains('active')) return;
+      const el = getCurrentMediaEl();
+      if (!el || el.tagName === 'VIDEO') return;
+
+      e.preventDefault();
+      const dir = e.deltaY > 0 ? -1 : 1; // 上滚放大
+      const factor = dir > 0 ? 1.12 : 0.90;
+      setZoom(previewState.scale * factor, e.clientX, e.clientY);
+    }, { passive: false });
+
+    // 统一手势：Pointer Events（鼠标/触控）
+    domPreview.addEventListener('pointerdown', (e) => {
+      if (!domPreview.classList.contains('active')) return;
+
+      // 避免在按钮上拖拽
+      if (e.target.closest('button')) return;
+
+      domPreview.setPointerCapture?.(e.pointerId);
+      previewState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      // 双击触控（移动端）检测：两次 pointerdown 间隔 < 260ms
+      const now = Date.now();
+      if (now - previewState.lastTapAt < 260) {
+        toggleZoomAt(e.clientX, e.clientY);
+        previewState.lastTapAt = 0;
+        previewState.pointers.clear();
+        previewState.mode = 'idle';
+        return;
+      }
+      previewState.lastTapAt = now;
+
+      previewState.startX = e.clientX;
+      previewState.startY = e.clientY;
+      previewState.startTx = previewState.tx;
+      previewState.startTy = previewState.ty;
+      previewState.swipeDx = 0;
+
+      const pointerCount = previewState.pointers.size;
+
+      if (pointerCount === 2) {
+        // pinch start
+        const pts = [...previewState.pointers.values()];
+        previewState.startDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        previewState.startScale = previewState.scale;
+        previewState.mode = 'pinch';
+      } else {
+        if (previewState.scale > 1.01) {
+          previewState.mode = 'pan';
+        } else {
+          previewState.mode = 'swipe';
+          domSlider.classList.add('is-dragging');
+          previewState.swipeBaseX = -state.previewIndex * getViewportWidth();
+        }
+      }
+    });
+
+    domPreview.addEventListener('pointermove', (e) => {
+      if (!domPreview.classList.contains('active')) return;
+      if (!previewState.pointers.has(e.pointerId)) return;
+
+      previewState.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (previewState.mode === 'pinch' && previewState.pointers.size >= 2) {
+        const pts = [...previewState.pointers.values()];
+        const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+        if (previewState.startDist > 0) {
+          const scale = previewState.startScale * (dist / previewState.startDist);
+          // 以两指中点为锚
+          const midX = (pts[0].x + pts[1].x) / 2;
+          const midY = (pts[0].y + pts[1].y) / 2;
+          setZoom(scale, midX, midY);
+        }
+        return;
+      }
+
+      const dx = e.clientX - previewState.startX;
+      const dy = e.clientY - previewState.startY;
+
+      if (previewState.mode === 'pan') {
+        // 缩放后拖拽查看细节
+        previewState.tx = previewState.startTx + dx;
+        previewState.ty = previewState.startTy + dy;
+        applyTransform();
+        return;
+      }
+
+      if (previewState.mode === 'swipe') {
+        // 未缩放：左右拖拽切换（实时跟手）
+        previewState.swipeDx = dx;
+        const w = getViewportWidth();
+        domSlider.style.transform = `translate3d(${previewState.swipeBaseX + dx}px, 0, 0)`;
+        // 垂直滑动抑制（避免误触）
+        if (Math.abs(dy) > Math.abs(dx) * 1.2) {
+          domSlider.style.transform = `translate3d(${previewState.swipeBaseX}px, 0, 0)`;
+          previewState.swipeDx = 0;
+        }
+      }
+    });
+
+    function finalizeSwipe() {
+      const w = getViewportWidth();
+      const dx = previewState.swipeDx;
+      const threshold = Math.min(120, w * 0.18);
+
+      domSlider.classList.remove('is-dragging');
+
+      if (Math.abs(dx) > threshold) {
+        const dir = dx > 0 ? -1 : 1;
+        state.previewIndex = Math.max(0, Math.min(state.mediaList.length - 1, state.previewIndex + dir));
+      }
+      updatePreviewView(true);
+      previewState.swipeDx = 0;
+    }
+
+    domPreview.addEventListener('pointerup', (e) => {
+      if (!previewState.pointers.has(e.pointerId)) return;
+      previewState.pointers.delete(e.pointerId);
+
+      // pinch -> 退出时回到 pan 或 idle
+      if (previewState.mode === 'pinch' && previewState.pointers.size < 2) {
+        previewState.mode = previewState.scale > 1.01 ? 'pan' : 'idle';
+        return;
+      }
+
+      if (previewState.mode === 'swipe') finalizeSwipe();
+
+      previewState.mode = 'idle';
+    });
+
+    domPreview.addEventListener('pointercancel', () => {
+      previewState.pointers.clear();
+      if (previewState.mode === 'swipe') finalizeSwipe();
+      previewState.mode = 'idle';
+    });
+
+    // 双击（桌面鼠标）
+    domPreview.addEventListener('dblclick', (e) => {
+      if (!domPreview.classList.contains('active')) return;
+      if (e.target && e.target.classList.contains('preview-content')) {
+        toggleZoomAt(e.clientX, e.clientY);
+      }
+    });
+
+    // 预览打开时尺寸变化：重新校正 slider 位置
+    window.addEventListener('resize', () => {
+      if (domPreview.classList.contains('active')) updatePreviewView(false);
+    });
+
+
+    /********************
+     * 7) 全局事件与启动
+     ********************/
+    $('#btn-close-panel').addEventListener('click', () => {
+      closePanel();
+      if(state.isPlaying) stopPlay();
+    });
+
+    // 键盘辅助
+    window.addEventListener('keydown', e => {
+      if(domPreview.classList.contains('active')) {
+        if(e.key === 'Escape') closePreview();
+        if(e.key === 'ArrowLeft') changePreview(-1);
+        if(e.key === 'ArrowRight') changePreview(1);
+        if(e.key === 'Home') { state.previewIndex = 0; updatePreviewView(); }
+        if(e.key === 'End') { state.previewIndex = state.mediaList.length-1; updatePreviewView(); }
+      } else {
+        if(e.key === 'Escape' && !$('#detail-panel').classList.contains('translate-x-full')) closePanel();
+      }
+    });
+
+    // 启动应用
+    
+    // 页面卸载：清理 Leaflet 实例与临时标记（避免内存泄漏）
+    window.addEventListener('beforeunload', () => {
+      try { clearTempMarker(true); } catch (_) {}
+      try { state.map?.remove?.(); } catch (_) {}
+    });
+
+document.addEventListener("DOMContentLoaded", () => {
+      renderNav();
+      initMap();
+    });
+  </script>
+</body>
+</html>
